@@ -7,9 +7,9 @@ Angular storefront, customer dashboard and admin panel for **WoodHeart** — hom
 | Framework | Angular 21 — standalone, signals, zoneless, SSR |
 | Styling | Bootstrap 5 + Angular CDK |
 | Tests | Vitest |
-| API | WoodHeart backend (.NET 10) — runs on `localhost:5199` |
+| API | WoodHeart backend (.NET 10) — [`WoodHeart_BE`](https://github.com/aslam6161/WoodHeart_BE), runs on `localhost:5199` |
 
-**Architecture and roadmap** live in the backend repo's `PLAN.md`. One copy, deliberately — duplicated architecture docs drift apart and then mislead.
+**Architecture and roadmap** live in the backend repo: [`WoodHeart_BE/PLAN.md`](https://github.com/aslam6161/WoodHeart_BE/blob/main/PLAN.md). One copy, deliberately — duplicated architecture docs drift apart and then mislead.
 
 ---
 
