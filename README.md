@@ -9,6 +9,8 @@ Angular storefront, customer dashboard and admin panel for **WoodHeart** — hom
 | Tests | Vitest |
 | API | WoodHeart backend (.NET 10) — [`WoodHeart_BE`](https://github.com/aslam6161/WoodHeart_BE), runs on `localhost:5199` |
 
+**How work moves through the repo** — branches, pull requests, reviews, CI/CD: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 **Architecture and roadmap** live in the backend repo: [`WoodHeart_BE/PLAN.md`](https://github.com/aslam6161/WoodHeart_BE/blob/main/PLAN.md). One copy, deliberately — duplicated architecture docs drift apart and then mislead.
 
 ---
