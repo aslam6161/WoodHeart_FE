@@ -41,20 +41,22 @@ Release by opening `develop` → `main`. That merge triggers the deployment.
 
 ---
 
-## Reviews
+## Review
 
-Every pull request gets an automated Claude review within a couple of minutes,
-plus a human one. The AI review cannot approve and cannot merge — it is a fast
-first pass, briefed on this app's specifics: server-side rendering, zoneless
-change detection, and the `GeneralResponse` seam with the API.
+Review is manual, and it is yours. Open the pull request, let CI finish, then
+read the whole diff on GitHub before merging it. Reading it there rather than
+in your editor is the point — the diff is the change stripped of everything you
+remember about writing it.
 
-Mention `@claude` in a comment to pull it back into a thread.
+Work through the Angular checklist in the pull request template against the
+diff rather than from memory. Two of those items — unguarded browser globals
+during SSR, and plain fields under zoneless change detection — fail silently
+and look completely fine locally, which is exactly why they are on a list.
 
-Requires the `ANTHROPIC_API_KEY` repository secret:
-
-```bash
-gh secret set ANTHROPIC_API_KEY --repo aslam6161/WoodHeart_FE
-```
+There is no automated reviewer. GitHub Copilot code review needs a paid plan,
+GitHub Models was retired in July 2026, and an Anthropic API key bills per
+review. If you want a second opinion on a branch before opening the pull
+request, `/code-review` in Claude Code does that locally at no extra cost.
 
 ---
 
