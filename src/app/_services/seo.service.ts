@@ -45,9 +45,7 @@ export class SeoService {
   private static readonly SiteName = 'WoodHeart';
 
   apply(page: SeoPage): void {
-    // Bounded, because a title tag is truncated in the results anyway and an
-    // over-long one dilutes the part that matters.
-    const fullTitle = `${page.title} | ${SeoService.SiteName}`;
+    const fullTitle = this.withBrand(page.title);
 
     this.title.setTitle(fullTitle);
 
@@ -104,6 +102,28 @@ export class SeoService {
     if (!existing) {
       head.appendChild(script);
     }
+  }
+
+  /**
+   * Appends the site name, unless the title already carries it.
+   *
+   * <b>The condition is the whole point.</b> `SeoTitle` is an admin-authored
+   * field, and an admin writing a title for a product page writes the brand
+   * into it — the seed data does exactly that. Appending unconditionally
+   * produced "Segun King Bed — WoodHeart | WoodHeart" in the browser tab and
+   * in every search result, which no test caught because the fixtures all used
+   * a bare product name.
+   *
+   * Appending at all still matters: a page falling back to a plain product name
+   * would be "Dining Chair" in a result list, which sells nothing for a brand
+   * nobody has heard of yet.
+   */
+  private withBrand(title: string): string {
+    const trimmed = title.trim();
+
+    return trimmed.toLowerCase().includes(SeoService.SiteName.toLowerCase())
+      ? trimmed
+      : `${trimmed} | ${SeoService.SiteName}`;
   }
 
   /** Absolute URL for a site path. */

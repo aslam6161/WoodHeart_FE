@@ -21,6 +21,27 @@ describe('SeoService', () => {
       .forEach(element => element.remove());
   });
 
+  it('appends the site name to a bare title', () => {
+    seo.apply({ title: 'Dining Chair', canonicalPath: '/products/dining-chair' });
+
+    // "Dining Chair" alone in a result list sells nothing for a brand nobody
+    // has heard of yet.
+    expect(document.title).toBe('Dining Chair | WoodHeart');
+  });
+
+  it('does not append the site name twice', () => {
+    // SeoTitle is admin-authored and the seed writes the brand into it. This
+    // shipped as "Segun King Bed — WoodHeart | WoodHeart" in the browser tab
+    // and in every search result; no test caught it because every fixture used
+    // a bare product name.
+    seo.apply({
+      title: 'Segun King Bed — WoodHeart',
+      canonicalPath: '/products/segun-king-bed'
+    });
+
+    expect(document.title).toBe('Segun King Bed — WoodHeart');
+  });
+
   it('writes an absolute canonical from a path', () => {
     // The API returns `/products/segun-king-bed` on purpose — which host serves
     // it is the client's business. A relative canonical is ignored outright.

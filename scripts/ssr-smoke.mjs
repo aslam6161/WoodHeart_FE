@@ -119,7 +119,9 @@ const bedDetail = {
     { nameEn: 'Beds', nameBn: 'বেড', slug: 'beds' }
   ],
   seo: {
-    title: 'Segun King Bed',
+    // Branded, because that is what CatalogSeed actually writes into SeoTitle.
+    // The earlier bare value here is why the doubled title reached a browser.
+    title: 'Segun King Bed — WoodHeart',
     description: 'A solid segun bed built to last a generation.',
     canonicalPath: '/products/segun-king-bed',
     // What CatalogMapper.ToStorefrontDetail actually produces:
@@ -387,8 +389,11 @@ async function main() {
       check('product page responds 200', status === 200, `got ${status}`);
       check(
         'the title is the product, not the app name',
-        html.includes('<title>Segun King Bed | WoodHeart</title>')
+        html.includes('<title>Segun King Bed — WoodHeart</title>')
       );
+      // An admin-authored SeoTitle already carries the brand. Appending it
+      // again reads as a bug to anyone who sees the tab or the search result.
+      check('and the brand is not doubled', !html.includes('WoodHeart | WoodHeart'));
       check(
         'the canonical is absolute and correct',
         html.includes('href="https://woodheart.example/products/segun-king-bed"')
