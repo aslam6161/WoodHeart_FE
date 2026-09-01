@@ -35,7 +35,10 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1"
+              ]
             },
             "ssr": {
               "entry": "src/server.ts"
@@ -43,6 +46,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",

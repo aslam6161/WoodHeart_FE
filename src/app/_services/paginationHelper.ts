@@ -2,10 +2,19 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { PaginatedResult } from '../_models/pagination';
+import { GeneralResponseOf } from '../_models/generalResponse';
 
 /**
- * Reads a paged response: the body is the array, the counts come from the
- * `X-Pagination` header.
+ * Reads a paged response: the items come from the envelope's `data`, the
+ * counts come from the `X-Pagination` header.
+ *
+ * <b>The unwrap is the point.</b> Every WoodHeart endpoint answers with
+ * `GeneralResponse`, so the body of a listing is
+ * `{ isSuccess: true, data: [...] }` — not the array. An earlier version of
+ * this helper handed `response.body` straight back as the item list, which
+ * type-checks perfectly (the caller names `T` and TypeScript believes it) and
+ * puts an object where the template expects an array. `@for` over it renders
+ * nothing, and the page looks like an empty catalogue rather than a bug.
  *
  * The header only reaches this code because the API adds it to
  * `Access-Control-Expose-Headers`. Without that the browser hides it on any
@@ -16,12 +25,12 @@ export function getPaginatedResult<T>(
   url: string,
   params: HttpParams,
   http: HttpClient
-): Observable<PaginatedResult<T>> {
-  const paginatedResult = new PaginatedResult<T>();
-
-  return http.get<T>(url, { observe: 'response', params }).pipe(
+): Observable<PaginatedResult<T[]>> {
+  return http.get<GeneralResponseOf<T[]>>(url, { observe: 'response', params }).pipe(
     map(response => {
-      paginatedResult.result = response.body ?? undefined;
+      const paginatedResult = new PaginatedResult<T[]>();
+
+      paginatedResult.result = response.body?.data ?? [];
 
       const pagination = response.headers.get('X-Pagination');
 

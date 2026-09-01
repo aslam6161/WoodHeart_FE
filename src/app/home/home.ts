@@ -1,10 +1,18 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { DiagnosticsService } from '../_services/diagnostics.service';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { CategoryTree, StorefrontProduct } from '../_models/catalog';
+import { CatalogService } from '../_services/catalog.service';
+import { SeoService } from '../_services/seo.service';
+import { ProductCard } from '../catalog/product-card/product-card';
+
+const ArrivalCount = 8;
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, ProductCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="py-5 bg-light border-bottom">
@@ -17,38 +25,80 @@ import { DiagnosticsService } from '../_services/diagnostics.service';
       </div>
     </section>
 
-    <section class="container py-5">
-      <!-- Phase 0 placeholder. Proves the API round trip end to end, and gets
-           replaced by the featured-products grid in Phase 1. -->
-      <div class="card">
-        <div class="card-body">
-          <h6 class="card-title">API connection</h6>
+    @if (categories().length) {
+      <section class="container py-5">
+        <h2 class="h5 mb-3">Shop by room</h2>
 
-          @if (apiStatus(); as status) {
-            <p class="mb-1 small text-success">Connected — {{ status.environment }}</p>
-            <p class="mb-0 small text-muted">Dhaka time: {{ status.dhakaNow }}</p>
-          } @else if (failed()) {
-            <p class="mb-0 small text-danger">
-              Could not reach the API. Is it running on localhost:5199?
-            </p>
-          } @else {
-            <p class="mb-0 small text-muted">Checking…</p>
+        <div class="row row-cols-2 row-cols-md-4 g-3">
+          @for (category of categories(); track category.id) {
+            <div class="col">
+              <a
+                class="btn btn-outline-secondary w-100 text-start"
+                routerLink="/products"
+                [queryParams]="{ category: category.slug }">
+                {{ category.nameEn }}
+                <span class="text-muted small d-block">{{ category.productCount }} products</span>
+              </a>
+            </div>
           }
         </div>
-      </div>
-    </section>
+      </section>
+    }
+
+    @if (arrivals().length) {
+      <section class="container pb-5">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+          <h2 class="h5 mb-0">New arrivals</h2>
+          <a class="small" routerLink="/products">See all</a>
+        </div>
+
+        <div class="row row-cols-2 row-cols-md-4 g-3">
+          @for (product of arrivals(); track product.id) {
+            <div class="col">
+              <app-product-card [product]="product" />
+            </div>
+          }
+        </div>
+      </section>
+    }
   `
 })
 export class Home implements OnInit {
-  private readonly diagnostics = inject(DiagnosticsService);
+  private readonly catalog = inject(CatalogService);
+  private readonly seo = inject(SeoService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly apiStatus = signal<{ environment: string; dhakaNow: string } | null>(null);
-  protected readonly failed = signal(false);
+  protected readonly categories = signal<CategoryTree[]>([]);
+  protected readonly arrivals = signal<StorefrontProduct[]>([]);
 
   ngOnInit(): void {
-    this.diagnostics.ping().subscribe({
-      next: response => this.apiStatus.set(response),
-      error: () => this.failed.set(true)
+    this.seo.apply({
+      title: 'Interiors, made in Bangladesh',
+      description:
+        'Handmade beds, wardrobes, sofas, dining sets and lighting, plus interior design consultation. WoodHeart, Bangladesh.',
+      canonicalPath: '/'
     });
+
+    this.seo.setJsonLd(null);
+
+    // Both failures collapse to an empty list rather than an error panel. This
+    // is the page a customer lands on from a search result: an apology where
+    // the furniture should be costs more than a shorter page, and the header,
+    // hero and navigation still work.
+    this.catalog
+      .getCategories()
+      .pipe(
+        catchError(() => of([] as CategoryTree[])),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(categories => this.categories.set(categories));
+
+    this.catalog
+      .search({ pageSize: ArrivalCount, sortBy: 'RecentlyPublished' })
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(page => this.arrivals.set(page?.result ?? []));
   }
 }

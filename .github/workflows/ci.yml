@@ -83,6 +83,20 @@ jobs:
       - name: Build (production, with SSR)
         run: npm run build -- --configuration production
 
+      # The step that checks the thing the unit tests structurally cannot.
+      #
+      # Every spec in this repo answers through HttpTestingController, so a
+      # substitute returns whatever shape the test invented. This boots the
+      # built SSR bundle against an HTTP API and asserts on the bytes served
+      # before any client JavaScript runs — which is the HTML a crawler sees.
+      #
+      # It caught two defects on the day it was written: an empty
+      # `security.allowedHosts` that silently downgraded every server render to
+      # a client-side shell, and an unknown URL answering 302 instead of 404.
+      # Both were invisible to `ng build` and to every unit test.
+      - name: Server-rendering smoke test
+        run: npm run smoke:ssr
+
       # The production build above already fails on a budget breach, so this
       # step only reports. The figure worth watching is the gzipped transfer
       # size rather than the raw total: Bootstrap's CSS is ~227 kB raw but
