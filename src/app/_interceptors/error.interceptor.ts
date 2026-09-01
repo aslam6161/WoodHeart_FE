@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../_services/toast.service';
 import { ErrorCodes, GeneralResponse } from '../_models/generalResponse';
+import { HANDLES_NOT_FOUND } from './http-context';
 
 /**
  * Turns an HTTP failure into something the customer can act on.
@@ -42,7 +43,12 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
           break;
 
         case 404:
-          router.navigateByUrl('/not-found');
+          // Unless the caller said it handles its own — a product page for a
+          // slug that does not exist has to stay on that URL to answer 404
+          // there. See HANDLES_NOT_FOUND.
+          if (!request.context.get(HANDLES_NOT_FOUND)) {
+            router.navigateByUrl('/not-found');
+          }
           break;
 
         case 409:

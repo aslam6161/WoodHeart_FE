@@ -11,6 +11,7 @@ import { routes } from './app.routes';
 import { jwtInterceptor } from './_interceptors/jwt.interceptor';
 import { errorInterceptor } from './_interceptors/error.interceptor';
 import { loadingInterceptor } from './_interceptors/loading.interceptor';
+import { apiBaseInterceptor } from './_interceptors/api-base.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,10 +31,12 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       // fetch rather than XHR: required for SSR to stream properly.
       withFetch(),
-      // Order matters. Outermost first: loading wraps everything so the spinner
-      // covers the whole exchange, then jwt attaches credentials, then error
-      // sits closest to the response so it sees failures first.
-      withInterceptors([loadingInterceptor, jwtInterceptor, errorInterceptor])
+      // Order matters. Outermost first: apiBase resolves the URL so every
+      // interceptor after it sees the address the request will actually go to,
+      // then loading wraps the exchange so the spinner covers all of it, then
+      // jwt attaches credentials, then error sits closest to the response so it
+      // sees failures first.
+      withInterceptors([apiBaseInterceptor, loadingInterceptor, jwtInterceptor, errorInterceptor])
     ),
 
     provideClientHydration(withEventReplay())

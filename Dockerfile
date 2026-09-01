@@ -40,6 +40,31 @@ ENV TZ=Asia/Dhaka
 ENV NODE_ENV=production
 ENV PORT=4000
 
+# The hostnames this server will render for, beyond the localhost entries
+# compiled into the build. THIS MUST BE SET FOR A REAL DOMAIN. Angular fails
+# closed on an unknown Host: the request is not rejected, it is quietly
+# downgraded to a client-side shell with no product HTML, no title and no
+# structured data — and it still answers 200, so the health check below passes
+# and nothing looks wrong.
+#
+#   docker run -e ALLOWED_HOSTS=woodheart.com.bd,www.woodheart.com.bd ...
+ENV ALLOWED_HOSTS=""
+
+# Set to "true" only when a reverse proxy in front is actually setting
+# X-Forwarded-*. An untrusted forwarded header downgrades the render the same
+# way; a trusted one that nothing sets lets a client forge its own.
+ENV TRUST_PROXY_HEADERS="false"
+
+# The canonical origin for <link rel="canonical"> and og:url, e.g.
+# https://woodheart.com.bd. Without it the request's own origin is used, which
+# behind a proxy is the internal one.
+ENV SITE_URL=""
+
+# Where server-side rendering reaches the API. Inside a compose network this is
+# the API service directly, e.g. http://api:8080 — the browser still uses the
+# relative /api path through the proxy.
+ENV API_INTERNAL_URL=""
+
 # The Angular server build bundles its dependencies — express included — into
 # server.mjs, so there is no node_modules in this stage at all. That is why the
 # runtime image is a fraction of the build image.
