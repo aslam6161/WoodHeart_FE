@@ -14,24 +14,9 @@ import { staffGuard } from './_guards/auth.guard';
  * otherwise be dead weight in the initial download.
  */
 export const routes: Routes = [
-  {
-    path: '',
-    component: DefaultLayout,
-    children: [
-      { path: '', component: Home, title: 'WoodHeart — Interiors, made in Bangladesh' },
-
-      // Phase 1 onward:
-      // { path: 'products', loadComponent: ... },
-      // { path: 'products/:slug', loadComponent: ... },
-      // { path: 'cart', loadComponent: ... },
-      // { path: 'checkout', loadComponent: ... },
-      // { path: 'account', canActivate: [authGuard], loadChildren: ... },
-
-      { path: 'not-found', component: NotFound, title: 'Page not found' },
-      { path: 'server-error', component: ServerError, title: 'Something went wrong' }
-    ]
-  },
-
+  // Admin comes first, and it has to. The storefront shell below ends in a
+  // `**` child that matches anything, so a route declared after it would never
+  // be reached.
   {
     path: 'admin',
     canActivate: [staffGuard],
@@ -42,7 +27,43 @@ export const routes: Routes = [
     ]
   },
 
-  // Catch-all last. Redirects rather than rendering in place, so the address
-  // bar matches what the customer is looking at and the page is linkable.
-  { path: '**', redirectTo: 'not-found' }
+  {
+    path: '',
+    component: DefaultLayout,
+    children: [
+      { path: '', component: Home, title: 'WoodHeart — Interiors, made in Bangladesh' },
+
+      // Lazy, even though the storefront is the common case. The listing and
+      // the product page are separate chunks because a customer arriving on a
+      // product from a search result never opens the listing, and vice versa.
+      {
+        path: 'products',
+        loadComponent: () => import('./catalog/product-list/product-list').then(m => m.ProductList)
+      },
+      {
+        path: 'products/:slug',
+        loadComponent: () =>
+          import('./catalog/product-detail/product-detail').then(m => m.ProductDetail)
+      },
+
+      // Phase 2 onward:
+      // { path: 'cart', loadComponent: ... },
+      // { path: 'checkout', loadComponent: ... },
+      // { path: 'account', canActivate: [authGuard], loadChildren: ... },
+
+      { path: 'not-found', component: NotFound, title: 'Page not found' },
+      { path: 'server-error', component: ServerError, title: 'Something went wrong' },
+
+      // Catch-all, rendered in place rather than redirected to /not-found.
+      //
+      // A redirect turns a dead link into a 302 that lands on a 404 one hop
+      // later. Rendering here keeps the address the customer actually typed,
+      // and lets the page answer 404 on that URL — which is the status a
+      // crawler needs to drop the link rather than keep following it.
+      //
+      // It also stays inside the storefront shell, so a mistyped URL still has
+      // the header, the search and a way back into the catalogue.
+      { path: '**', component: NotFound, title: 'Page not found' }
+    ]
+  }
 ];
