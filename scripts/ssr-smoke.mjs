@@ -96,7 +96,7 @@ const bedCard = {
   leadTimeDays: 14,
   averageRating: null,
   reviewCount: 0,
-  primaryImagePath: null,
+  primaryImagePath: 'woodheart/products/7/bed-hero',
   primaryImageAlt: 'Segun King Bed',
   variantCount: 4
 };
@@ -122,7 +122,11 @@ const bedDetail = {
     title: 'Segun King Bed',
     description: 'A solid segun bed built to last a generation.',
     canonicalPath: '/products/segun-king-bed',
-    ogImagePath: null
+    // What CatalogMapper.ToStorefrontDetail actually produces:
+    // `product.OgImagePath ?? the primary media's storage path`. Leaving this
+    // null here made the og:image check fail against correct code — the
+    // fixture was the thing that was wrong.
+    ogImagePath: 'woodheart/products/7/bed-hero'
   },
   variants: [
     {
@@ -146,7 +150,32 @@ const bedDetail = {
       isDefault: false
     }
   ],
-  media: []
+  media: [
+    {
+      id: 91,
+      variantId: null,
+      mediaType: 'Image',
+      storagePath: 'woodheart/products/7/bed-hero',
+      altText: 'A segun king bed against a white wall',
+      caption: null,
+      isPrimary: true,
+      width: 4000,
+      height: 3000,
+      externalUrl: null
+    },
+    {
+      id: 92,
+      variantId: null,
+      mediaType: 'Video',
+      storagePath: 'woodheart/products/7/bed-clip',
+      altText: 'The bed being assembled',
+      caption: null,
+      isPrimary: false,
+      width: 1920,
+      height: 1080,
+      externalUrl: null
+    }
+  ]
 };
 
 const pagination = {
@@ -292,7 +321,10 @@ async function main() {
       // production, so the smoke test exercises exactly that path.
       API_INTERNAL_URL: `http://127.0.0.1:${API_PORT}`,
       SITE_URL: 'https://woodheart.example',
-      ALLOWED_HOSTS: 'woodheart.example'
+      ALLOWED_HOSTS: 'woodheart.example',
+      // Carried to the browser in the transfer state, so the URLs in the
+      // served HTML and the URLs after hydration come from one value.
+      CLOUDINARY_CLOUD_NAME: 'woodheart-smoke'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -323,6 +355,17 @@ async function main() {
       check('the product is in the served HTML', html.includes('Segun King Bed'));
       check('the price is formatted as taka', html.includes('৳68,500'));
       check('the category tree rendered', html.includes('Bedroom'));
+
+      // The card is the only place most visitors ever see a product, and its
+      // image is most of the page weight. If the transformation stopped being
+      // applied, the page would still look right and quietly ship a 4000px
+      // original to a phone.
+      check(
+        'card images come from Cloudinary',
+        html.includes('res.cloudinary.com/woodheart-smoke/image/upload/')
+      );
+      check('with automatic format and quality', html.includes('f_auto,q_auto'));
+      check('and a responsive srcset', html.includes('srcset=') && html.includes('1440w'));
     }
 
     console.log('--- listing renders and reads the envelope ---');
@@ -360,6 +403,24 @@ async function main() {
       check('breadcrumbs rendered', html.includes('Bedroom') && html.includes('Beds'));
       check('the variant SKU rendered', html.includes('WH-BED-001-SG-6'));
       check('no robots noindex on a real product', !html.includes('noindex'));
+
+      // The share card. Handing a scraper the 4000px original means it fetches
+      // several megabytes to render a thumbnail, or gives up and shows nothing.
+      check(
+        'og:image is cropped to share-card size',
+        html.includes('c_fill,g_auto,w_1200,h_630')
+      );
+
+      // The hero is the Largest Contentful Paint on every product URL.
+      check('the hero is not cropped', html.includes('f_auto,q_auto,c_limit,w_1024'));
+      check('the hero is marked high priority', html.includes('fetchpriority="high"'));
+
+      // A video thumbnail is a still from its first frame, not the video.
+      check('the video thumbnail is a poster frame', html.includes('/video/upload/so_0,'));
+      check(
+        'and the cloud name came from the environment, not the bundle',
+        !html.includes('res.cloudinary.com/woodheart-dev/')
+      );
     }
 
     console.log('--- a product that does not exist ---');

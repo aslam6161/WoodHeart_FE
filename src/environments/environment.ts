@@ -23,6 +23,18 @@ export const environment = {
   mediaUrl: '',
 
   /** Sent as `X-Anonymous-Id` so a signed-out visitor keeps one basket. */
+  /**
+   * The Cloudinary cloud name, e.g. `woodheart`.
+   *
+   * Not a secret — it is the host of every image URL on every page — which is
+   * why the client carries its own copy rather than asking the API. The API key
+   * and secret never leave the server.
+   *
+   * Empty renders placeholder tiles instead of images, which is what a
+   * checkout without Cloudinary credentials should look like.
+   */
+  cloudinaryCloudName: 'woodheart-dev',
+
   anonymousIdKey: 'wh_anon',
 
   defaultLanguage: 'en'
