@@ -2,6 +2,7 @@ import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from '../../environments/environment';
 import { SITE_ORIGIN } from '../_interceptors/api-base.interceptor';
+import { MediaUrlService } from './media-url.service';
 
 export interface SeoPage {
   title: string;
@@ -38,6 +39,7 @@ export class SeoService {
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
   private readonly configuredOrigin = inject(SITE_ORIGIN, { optional: true });
+  private readonly mediaUrl = inject(MediaUrlService);
 
   private static readonly JsonLdId = 'wh-jsonld';
   private static readonly SiteName = 'WoodHeart';
@@ -109,7 +111,13 @@ export class SeoService {
     return join(this.origin(), path);
   }
 
-  /** Absolute URL for a stored media path. */
+  /**
+   * Absolute URL for a stored media path.
+   *
+   * Sized for a share card — 1200x630 is what Facebook, WhatsApp and X all
+   * crop to, and handing them a 4000px original means the scraper fetches
+   * several megabytes to render a thumbnail, or gives up and shows nothing.
+   */
   media(storagePath: string): string {
     // Already absolute — an externally hosted asset. Prefixing an origin onto
     // it would produce a URL that 404s.
@@ -117,7 +125,10 @@ export class SeoService {
       return storagePath;
     }
 
-    return join(environment.mediaUrl || this.origin(), storagePath);
+    return (
+      this.mediaUrl.image(storagePath, { width: 1200, height: 630, fit: 'fill' })
+      ?? join(environment.mediaUrl || this.origin(), storagePath)
+    );
   }
 
   /**

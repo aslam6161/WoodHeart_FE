@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import { StorefrontProduct } from '../../_models/catalog';
 import { TakaPipe } from '../../_pipes/taka.pipe';
-import { SeoService } from '../../_services/seo.service';
+import { MediaUrlService } from '../../_services/media-url.service';
 
 /**
  * One product card.
@@ -23,7 +23,11 @@ import { SeoService } from '../../_services/seo.service';
           @if (imageUrl(); as url) {
             <img
               [src]="url"
+              [srcset]="srcset()"
+              sizes="(min-width: 992px) 300px, (min-width: 768px) 33vw, 50vw"
               [alt]="product().primaryImageAlt ?? product().nameEn"
+              width="400"
+              height="300"
               loading="lazy"
               decoding="async" />
           } @else {
@@ -111,14 +115,35 @@ import { SeoService } from '../../_services/seo.service';
   `
 })
 export class ProductCard {
-  private readonly seo = inject(SeoService);
+  private readonly media = inject(MediaUrlService);
 
   readonly product = input.required<StorefrontProduct>();
 
-  protected readonly imageUrl = computed(() => {
-    const path = this.product().primaryImagePath;
-    return path ? this.seo.media(path) : null;
-  });
+  /**
+   * The fallback `src`, for a browser that ignores `srcset`.
+   *
+   * 400x300 rather than the largest available: this is what an old browser
+   * downloads, and it is better for it to get a slightly soft card than four
+   * megabytes.
+   */
+  protected readonly imageUrl = computed(() =>
+    this.media.image(this.product().primaryImagePath, {
+      width: 400,
+      height: 300,
+      fit: 'fill'
+    })
+  );
+
+  /**
+   * Cropped to 4:3 at every width, matching the CSS box below.
+   *
+   * Cropping rather than fitting is deliberate on a card: a grid of
+   * photographs at nine different aspect ratios reads as a mistake, whatever
+   * the individual pictures look like.
+   */
+  protected readonly srcset = computed(() =>
+    this.media.srcset(this.product().primaryImagePath, 4 / 3)
+  );
 
   protected readonly initial = computed(() => this.product().nameEn.charAt(0).toUpperCase());
 }
