@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountService } from '../_services/account.service';
 
 /** The storefront header. */
@@ -47,7 +47,7 @@ import { AccountService } from '../_services/account.service';
                 </a>
               </li>
               <li class="nav-item">
-                <button class="btn btn-link nav-link" type="button" (click)="account.logout()">
+                <button class="btn btn-link nav-link" type="button" (click)="signOut()">
                   Sign out
                 </button>
               </li>
@@ -68,9 +68,22 @@ import { AccountService } from '../_services/account.service';
 })
 export class Nav {
   protected readonly account = inject(AccountService);
+  private readonly router = inject(Router);
+
   protected readonly menuOpen = signal(false);
 
   protected toggleMenu(): void {
     this.menuOpen.update(open => !open);
+  }
+
+  /**
+   * Signs out, and revokes the session server-side.
+   *
+   * Clearing the token locally is only half of it. Without the request the
+   * refresh cookie keeps working for another thirty days, so "sign out" on a
+   * shared machine would mean nothing at all.
+   */
+  protected signOut(): void {
+    this.account.logout().subscribe(() => this.router.navigateByUrl('/'));
   }
 }
