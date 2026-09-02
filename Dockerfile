@@ -60,6 +60,12 @@ ENV TRUST_PROXY_HEADERS="false"
 # behind a proxy is the internal one.
 ENV SITE_URL=""
 
+# The Cloudinary cloud name, e.g. "woodheart". Not a secret — it is the host of
+# every image URL on every page — and it is passed at runtime rather than
+# compiled in, so staging and production run the identical image. Unset means
+# products render placeholder tiles instead of photographs.
+ENV CLOUDINARY_CLOUD_NAME=""
+
 # Where server-side rendering reaches the API. Inside a compose network this is
 # the API service directly, e.g. http://api:8080 — the browser still uses the
 # relative /api path through the proxy.

@@ -22,6 +22,18 @@ export const environment = {
   /** Empty means media resolves against the site's own origin. */
   mediaUrl: '',
 
+  /**
+   * The Cloudinary cloud name, e.g. `woodheart`.
+   *
+   * Not a secret — it is the host of every image URL on every page — which is
+   * why the client carries its own copy rather than asking the API. The API key
+   * and secret never leave the server.
+   *
+   * Set at build time for the production cloud. Empty here rather than
+   * guessed: a wrong cloud name produces a page of broken images.
+   */
+  cloudinaryCloudName: '',
+
   anonymousIdKey: 'wh_anon',
 
   defaultLanguage: 'en'

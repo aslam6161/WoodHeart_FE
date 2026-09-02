@@ -21,6 +21,7 @@ import {
 import { CatalogService } from '../../_services/catalog.service';
 import { SeoService } from '../../_services/seo.service';
 import { ServerResponseService } from '../../_services/server-response.service';
+import { MediaUrlService } from '../../_services/media-url.service';
 import { TakaPipe } from '../../_pipes/taka.pipe';
 import { ProductCard } from '../product-card/product-card';
 
@@ -70,12 +71,24 @@ import { ProductCard } from '../product-card/product-card';
         <div class="row g-4">
           <div class="col-12 col-lg-7">
             @if (activeImage(); as image) {
-              <img
-                class="w-100 rounded border"
-                [src]="mediaUrl(image)"
-                [alt]="image.altText ?? item.nameEn"
-                [attr.width]="image.width"
-                [attr.height]="image.height" />
+              @if (image.mediaType === 'Video') {
+                <video
+                  class="w-100 rounded border"
+                  controls
+                  preload="metadata"
+                  [poster]="videoPoster(image)"
+                  [src]="videoUrl(image)"></video>
+              } @else {
+                <img
+                  class="w-100 rounded border"
+                  [src]="heroUrl(image)"
+                  [srcset]="heroSrcset(image)"
+                  sizes="(min-width: 992px) 640px, 100vw"
+                  [alt]="image.altText ?? item.nameEn"
+                  [attr.width]="image.width"
+                  [attr.height]="image.height"
+                  fetchpriority="high" />
+              }
             } @else {
               <div class="wh-hero-empty rounded border" aria-hidden="true">
                 <span>{{ item.nameEn.charAt(0).toUpperCase() }}</span>
@@ -92,7 +105,12 @@ import { ProductCard } from '../product-card/product-card';
                     [attr.aria-label]="image.caption ?? 'View image'"
                     [attr.aria-pressed]="image.id === activeImageId()"
                     (click)="activeImageId.set(image.id)">
-                    <img [src]="mediaUrl(image)" [alt]="image.altText ?? ''" loading="lazy" />
+                    <img
+                      [src]="thumbUrl(image)"
+                      [alt]="image.altText ?? ''"
+                      width="72"
+                      height="72"
+                      loading="lazy" />
                   </button>
                 }
               </div>
@@ -257,6 +275,7 @@ export class ProductDetail implements OnInit {
   private readonly catalog = inject(CatalogService);
   private readonly seo = inject(SeoService);
   private readonly serverResponse = inject(ServerResponseService);
+  private readonly media = inject(MediaUrlService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Bound from the route by `withComponentInputBinding`. */
@@ -316,19 +335,28 @@ export class ProductDetail implements OnInit {
     return variant?.isOnOffer ? (variant.compareAtPrice ?? null) : null;
   });
 
-  /** Images only. A PDF assembly guide is not something to put in the gallery. */
+  /**
+   * Images and video. A PDF assembly guide is not something to put in a gallery.
+   */
   protected readonly gallery = computed<StorefrontMedia[]>(
-    () => this.product()?.media.filter(media => media.mediaType === 'Image') ?? []
+    () =>
+      this.product()?.media.filter(
+        media => media.mediaType === 'Image' || media.mediaType === 'Video'
+      ) ?? []
   );
 
   protected readonly activeImage = computed<StorefrontMedia | null>(() => {
-    const images = this.gallery();
+    const items = this.gallery();
     const id = this.activeImageId();
 
     return (
-      images.find(image => image.id === id) ??
-      images.find(image => image.isPrimary) ??
-      images[0] ??
+      items.find(item => item.id === id) ??
+      items.find(item => item.isPrimary) ??
+      // A photograph before a video when nothing is selected. Landing on a
+      // product page and being shown a black player where the furniture should
+      // be is the wrong first impression, and the primary is always an image.
+      items.find(item => item.mediaType === 'Image') ??
+      items[0] ??
       null
     );
   });
@@ -491,7 +519,34 @@ export class ProductDetail implements OnInit {
     };
   }
 
-  protected mediaUrl(media: StorefrontMedia): string {
-    return media.externalUrl ?? this.seo.media(media.storagePath);
+  // The hero is the largest thing on the page and the Largest Contentful Paint
+  // on every product URL, so it gets a full srcset and fetchpriority="high".
+  protected heroUrl(media: StorefrontMedia): string | null {
+    return media.externalUrl ?? this.media.image(media.storagePath, { width: 1024, fit: 'limit' });
+  }
+
+  protected heroSrcset(media: StorefrontMedia): string | null {
+    // No aspect ratio, so `c_limit`: the whole photograph, uncropped. A card
+    // can crop a sofa; the page selling it cannot.
+    return media.externalUrl ? null : this.media.srcset(media.storagePath);
+  }
+
+  protected thumbUrl(media: StorefrontMedia): string | null {
+    if (media.externalUrl) {
+      return media.externalUrl;
+    }
+
+    // A video's thumbnail is a still from its first frame, not the video.
+    return media.mediaType === 'Video'
+      ? this.media.videoPoster(media.storagePath, 144)
+      : this.media.image(media.storagePath, { width: 144, height: 144, fit: 'fill' });
+  }
+
+  protected videoUrl(media: StorefrontMedia): string | null {
+    return media.externalUrl ?? this.media.video(media.storagePath);
+  }
+
+  protected videoPoster(media: StorefrontMedia): string | null {
+    return media.externalUrl ? null : this.media.videoPoster(media.storagePath, 1024);
   }
 }

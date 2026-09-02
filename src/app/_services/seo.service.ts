@@ -2,6 +2,7 @@ import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from '../../environments/environment';
 import { SITE_ORIGIN } from '../_interceptors/api-base.interceptor';
+import { MediaUrlService } from './media-url.service';
 
 export interface SeoPage {
   title: string;
@@ -38,14 +39,13 @@ export class SeoService {
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
   private readonly configuredOrigin = inject(SITE_ORIGIN, { optional: true });
+  private readonly mediaUrl = inject(MediaUrlService);
 
   private static readonly JsonLdId = 'wh-jsonld';
   private static readonly SiteName = 'WoodHeart';
 
   apply(page: SeoPage): void {
-    // Bounded, because a title tag is truncated in the results anyway and an
-    // over-long one dilutes the part that matters.
-    const fullTitle = `${page.title} | ${SeoService.SiteName}`;
+    const fullTitle = this.withBrand(page.title);
 
     this.title.setTitle(fullTitle);
 
@@ -104,12 +104,40 @@ export class SeoService {
     }
   }
 
+  /**
+   * Appends the site name, unless the title already carries it.
+   *
+   * <b>The condition is the whole point.</b> `SeoTitle` is an admin-authored
+   * field, and an admin writing a title for a product page writes the brand
+   * into it — the seed data does exactly that. Appending unconditionally
+   * produced "Segun King Bed — WoodHeart | WoodHeart" in the browser tab and
+   * in every search result, which no test caught because the fixtures all used
+   * a bare product name.
+   *
+   * Appending at all still matters: a page falling back to a plain product name
+   * would be "Dining Chair" in a result list, which sells nothing for a brand
+   * nobody has heard of yet.
+   */
+  private withBrand(title: string): string {
+    const trimmed = title.trim();
+
+    return trimmed.toLowerCase().includes(SeoService.SiteName.toLowerCase())
+      ? trimmed
+      : `${trimmed} | ${SeoService.SiteName}`;
+  }
+
   /** Absolute URL for a site path. */
   absolute(path: string): string {
     return join(this.origin(), path);
   }
 
-  /** Absolute URL for a stored media path. */
+  /**
+   * Absolute URL for a stored media path.
+   *
+   * Sized for a share card — 1200x630 is what Facebook, WhatsApp and X all
+   * crop to, and handing them a 4000px original means the scraper fetches
+   * several megabytes to render a thumbnail, or gives up and shows nothing.
+   */
   media(storagePath: string): string {
     // Already absolute — an externally hosted asset. Prefixing an origin onto
     // it would produce a URL that 404s.
@@ -117,7 +145,10 @@ export class SeoService {
       return storagePath;
     }
 
-    return join(environment.mediaUrl || this.origin(), storagePath);
+    return (
+      this.mediaUrl.image(storagePath, { width: 1200, height: 630, fit: 'fill' })
+      ?? join(environment.mediaUrl || this.origin(), storagePath)
+    );
   }
 
   /**
