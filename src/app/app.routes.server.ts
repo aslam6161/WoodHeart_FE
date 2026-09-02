@@ -18,10 +18,15 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 export const serverRoutes: ServerRoute[] = [
   {
     // Client-rendered, deliberately. Every admin route sits behind `staffGuard`,
-    // which reads the signed-in user from localStorage — absent on the server,
-    // so a server render fails the guard, redirects to the home page, and hands
-    // an admin a storefront page for their own dashboard URL. There is nothing
-    // to gain either: an admin panel has no search ranking to protect.
+    // and the session is restored from an HttpOnly cookie the browser holds —
+    // which never reaches the server render. So a server render fails the
+    // guard, redirects to the home page, and hands an admin a storefront page
+    // for their own dashboard URL.
+    //
+    // Restoring it server-side would be worse than useless: one SSR process
+    // serves every visitor, so a session restored there is a session shared.
+    // And there is nothing to gain — an admin panel has no search ranking to
+    // protect.
     path: 'admin/**',
     renderMode: RenderMode.Client
   },
