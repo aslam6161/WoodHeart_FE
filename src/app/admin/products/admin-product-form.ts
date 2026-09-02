@@ -46,7 +46,11 @@ import {
           {{ loaded.status }}
         </span>
 
-        <a class="btn btn-sm btn-outline-secondary ms-auto" [routerLink]="['/admin/products', loaded.id, 'media']">
+        <a class="btn btn-sm btn-outline-secondary ms-auto" [routerLink]="['/admin/products', loaded.id, 'variants']">
+          Variants ({{ loaded.variants.length }})
+        </a>
+
+        <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/admin/products', loaded.id, 'media']">
           Photographs ({{ loaded.media.length }})
         </a>
       } @else {

@@ -46,6 +46,13 @@ export const adminRoutes: Routes = [
   },
 
   {
+    path: 'products/:productId/variants',
+    loadComponent: () =>
+      import('./products/admin-product-variants').then(m => m.AdminProductVariants),
+    title: 'Variants — WoodHeart Admin'
+  },
+
+  {
     path: 'products/:id',
     loadComponent: () =>
       import('./products/admin-product-form').then(m => m.AdminProductForm),

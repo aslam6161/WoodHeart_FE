@@ -136,6 +136,12 @@ import { AdminProductListItem, ProductStatus } from '../../_models/admin-catalog
                 <td class="text-end text-nowrap">
                   <a
                     class="btn btn-sm btn-outline-secondary"
+                    [routerLink]="['/admin/products', product.id, 'variants']">
+                    Variants
+                  </a>
+
+                  <a
+                    class="btn btn-sm btn-outline-secondary ms-1"
                     [routerLink]="['/admin/products', product.id, 'media']">
                     Photos
                   </a>
