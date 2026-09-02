@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AccountService } from '../../../_services/account.service';
 
 @Component({
@@ -22,7 +22,7 @@ import { AccountService } from '../../../_services/account.service';
         <div class="ms-auto d-flex align-items-center gap-3">
           <a class="small link-secondary text-decoration-none" routerLink="/">View store</a>
           <span class="small text-muted">{{ account.user()?.fullName ?? 'Staff' }}</span>
-          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="account.logout()">
+          <button class="btn btn-sm btn-outline-secondary" type="button" (click)="signOut()">
             Sign out
           </button>
         </div>
@@ -32,6 +32,22 @@ import { AccountService } from '../../../_services/account.service';
 })
 export class AdminNavbar {
   protected readonly account = inject(AccountService);
+  private readonly router = inject(Router);
 
   readonly toggleSidebar = output<void>();
+
+  /**
+   * Signs out and leaves the panel.
+   *
+   * Navigating away is not cosmetic: `staffGuard` only runs on navigation, so
+   * staying put would leave the admin looking at a fully rendered dashboard
+   * they are no longer signed in to, with every button behind it now a 401.
+   *
+   * The navigation happens on completion rather than in parallel, but the
+   * service has already cleared the local session synchronously and swallows
+   * network failures — so a dropped connection still ends at the storefront.
+   */
+  protected signOut(): void {
+    this.account.logout().subscribe(() => this.router.navigateByUrl('/'));
+  }
 }

@@ -21,10 +21,7 @@ export const routes: Routes = [
     path: 'admin',
     canActivate: [staffGuard],
     loadComponent: () => import('./_layout/admin-layout/admin-layout').then(m => m.AdminLayout),
-    children: [
-      // Phase 1 onward: dashboard, products, categories, orders, inventory,
-      // discounts, consultations, customers, settings.
-    ]
+    loadChildren: () => import('./admin/admin.routes').then(m => m.adminRoutes)
   },
 
   {
@@ -50,6 +47,12 @@ export const routes: Routes = [
       // { path: 'cart', loadComponent: ... },
       // { path: 'checkout', loadComponent: ... },
       // { path: 'account', canActivate: [authGuard], loadChildren: ... },
+
+      {
+        path: 'login',
+        loadComponent: () => import('./account/login/login').then(m => m.Login),
+        title: 'Sign in'
+      },
 
       { path: 'not-found', component: NotFound, title: 'Page not found' },
       { path: 'server-error', component: ServerError, title: 'Something went wrong' },
