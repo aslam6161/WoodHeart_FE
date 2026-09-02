@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../_services/toast.service';
 import { ErrorCodes, GeneralResponse } from '../_models/generalResponse';
-import { HANDLES_NOT_FOUND } from './http-context';
+import { HANDLES_NOT_FOUND, SILENT_FAILURE } from './http-context';
 
 /**
  * Turns an HTTP failure into something the customer can act on.
@@ -20,6 +20,13 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       const body = error.error as GeneralResponse | undefined;
+
+      // The session restore on start-up. It answers 401 for every visitor who
+      // has never signed in, which is most of them, and that is the correct
+      // answer rather than something to tell them about.
+      if (request.context.get(SILENT_FAILURE)) {
+        return throwError(() => error);
+      }
 
       switch (error.status) {
         case 400:
