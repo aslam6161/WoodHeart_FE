@@ -101,7 +101,15 @@ export interface StorefrontProductDetail extends StorefrontProduct {
   finishType?: string | null;
   warrantyMonths?: number | null;
   assemblyRequired: boolean;
-  deliverySurcharge?: number | null;
+
+  /**
+   * What delivering this product costs, inside and outside Dhaka. Null means
+   * the shop's ordinary rate for that zone applies. Two figures rather than
+   * one surcharge because a wardrobe to Sylhet is not a wardrobe to Banani
+   * plus a flat fee.
+   */
+  deliveryChargeInsideDhaka?: number | null;
+  deliveryChargeOutsideDhaka?: number | null;
   breadcrumbs: StorefrontBreadcrumb[];
   seo: StorefrontSeo;
   variants: StorefrontVariant[];
