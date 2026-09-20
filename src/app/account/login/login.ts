@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AccountService } from '../../_services/account.service';
+import { CartService } from '../../_services/cart.service';
 import { ToastService } from '../../_services/toast.service';
 import { SeoService } from '../../_services/seo.service';
 import { GeneralResponse } from '../../_models/generalResponse';
@@ -68,7 +69,10 @@ import { HttpErrorResponse } from '@angular/common/http';
             </button>
           </form>
 
-          <p class="small text-muted mt-4 mb-0">
+          <p class="small text-muted mt-4 mb-1">
+            New here? <a routerLink="/register" [queryParams]="registerParams">Create an account</a>.
+          </p>
+          <p class="small text-muted mb-0">
             Shopping as a guest is fine — <a routerLink="/products">browse the catalogue</a>.
           </p>
         </div>
@@ -79,6 +83,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export class Login {
   private readonly formBuilder = inject(FormBuilder);
   private readonly account = inject(AccountService);
+  private readonly cart = inject(CartService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly seo = inject(SeoService);
@@ -87,18 +92,23 @@ export class Login {
   protected readonly failure = signal<string | null>(null);
 
   /**
-   * Where to go after signing in.
+   * Where to go after signing in, if the query string says.
    *
-   * Read from the query string the guards set. Only a same-site path is
-   * honoured — see {@link safeReturnUrl}.
+   * Set by the guards. Only a same-site path is honoured — see
+   * {@link safeReturnUrl}. Without one, staff land on the admin panel and a
+   * customer on their orders; which of the two is not known until the API
+   * has answered.
    */
-  private readonly returnUrl =
-    this.router.parseUrl(this.router.url).queryParams['returnUrl'] ?? '/admin';
+  private readonly returnUrl: string | undefined =
+    this.router.parseUrl(this.router.url).queryParams['returnUrl'];
 
   protected readonly form = this.formBuilder.nonNullable.group({
     phoneNumber: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
+
+  /** Carries the returnUrl across to the registration page, if there is one. */
+  protected readonly registerParams = this.returnUrl ? { returnUrl: this.returnUrl } : {};
 
   /** Per-field messages the API sent back, keyed by control name. */
   private readonly fieldErrors = signal<Record<string, string[]>>({});
@@ -152,6 +162,9 @@ export class Login {
         next: () => {
           this.busy.set(false);
           this.toast.success('Signed in.');
+          // The API has just folded the guest basket into this account's;
+          // the header badge should show the merged count, not the old one.
+          this.cart.refresh().subscribe();
           this.router.navigateByUrl(this.safeReturnUrl());
         },
         error: (error: HttpErrorResponse) => {
@@ -174,9 +187,13 @@ export class Login {
    * exact shape of a credential-phishing hop.
    */
   private safeReturnUrl(): string {
-    const requested = String(this.returnUrl);
+    const requested = String(this.returnUrl ?? '');
 
     // A single leading slash and nothing that starts another scheme or host.
-    return /^\/(?!\/)/.test(requested) ? requested : '/admin';
+    if (/^\/(?!\/)/.test(requested)) {
+      return requested;
+    }
+
+    return this.account.isStaff() ? '/admin' : '/account/orders';
   }
 }
