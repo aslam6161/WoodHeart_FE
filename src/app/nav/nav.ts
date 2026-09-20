@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountService } from '../_services/account.service';
+import { CartService } from '../_services/cart.service';
 
 /** The storefront header. */
 @Component({
@@ -58,7 +59,18 @@ import { AccountService } from '../_services/account.service';
             }
 
             <li class="nav-item">
-              <a class="nav-link" routerLink="/cart" aria-label="Basket">Basket</a>
+              <a class="nav-link" routerLink="/cart" routerLinkActive="active">
+                Basket
+                @if (cart.itemCount(); as count) {
+                  <!-- The count, not a dot. A customer comparing three sofas
+                       wants to know it is three, and a badge that only says
+                       "something" sends them to the basket page to find out. -->
+                  <span class="badge rounded-pill text-bg-dark ms-1 align-text-top">
+                    {{ count }}
+                    <span class="visually-hidden">items in basket</span>
+                  </span>
+                }
+              </a>
             </li>
           </ul>
         </div>
@@ -68,9 +80,17 @@ import { AccountService } from '../_services/account.service';
 })
 export class Nav {
   protected readonly account = inject(AccountService);
+  protected readonly cart = inject(CartService);
   private readonly router = inject(Router);
 
   protected readonly menuOpen = signal(false);
+
+  constructor() {
+    // The badge is the first thing on every page that needs the basket, so
+    // the header is where it is fetched. A no-op on the server and after the
+    // first call; see CartService.
+    this.cart.ensureLoaded();
+  }
 
   protected toggleMenu(): void {
     this.menuOpen.update(open => !open);

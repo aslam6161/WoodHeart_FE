@@ -43,9 +43,27 @@ export const routes: Routes = [
           import('./catalog/product-detail/product-detail').then(m => m.ProductDetail)
       },
 
+      {
+        path: 'cart',
+        loadComponent: () => import('./cart/cart-page/cart-page').then(m => m.CartPage),
+        title: 'Your basket'
+      },
+      {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./checkout/checkout-page/checkout-page').then(m => m.CheckoutPage),
+        title: 'Checkout'
+      },
+      {
+        path: 'checkout/confirmation/:orderNumber',
+        loadComponent: () =>
+          import('./checkout/order-confirmation/order-confirmation').then(
+            m => m.OrderConfirmation
+          ),
+        title: 'Order placed'
+      },
+
       // Phase 2 onward:
-      // { path: 'cart', loadComponent: ... },
-      // { path: 'checkout', loadComponent: ... },
       // { path: 'account', canActivate: [authGuard], loadChildren: ... },
 
       {

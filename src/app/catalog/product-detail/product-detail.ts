@@ -18,7 +18,10 @@ import {
   StorefrontProductDetail,
   StorefrontVariant
 } from '../../_models/catalog';
+import { MAX_QUANTITY_PER_LINE } from '../../_models/cart';
 import { CatalogService } from '../../_services/catalog.service';
+import { CartService } from '../../_services/cart.service';
+import { ToastService } from '../../_services/toast.service';
 import { SeoService } from '../../_services/seo.service';
 import { ServerResponseService } from '../../_services/server-response.service';
 import { MediaUrlService } from '../../_services/media-url.service';
@@ -173,22 +176,47 @@ import { ProductCard } from '../product-card/product-card';
               </div>
             }
 
-            <div class="d-grid gap-2 mt-4">
-              <!-- Disabled until the basket exists in Phase 2. Shown rather
-                   than hidden so the page reads as finished furniture retail
-                   and the layout does not move when it is wired up. -->
-              <button class="btn btn-dark btn-lg" type="button" disabled>
-                Add to basket (coming soon)
+            <div class="d-flex align-items-stretch gap-2 mt-4">
+              <!-- A stepper rather than a free number box. Furniture is bought
+                   one or two at a time; a keyboard is the wrong tool for
+                   "two", and a typed 200 is the mistake the API refuses. -->
+              <div class="input-group wh-qty" role="group" aria-label="Quantity">
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  aria-label="One fewer"
+                  [disabled]="quantity() <= 1"
+                  (click)="quantity.set(quantity() - 1)">
+                  &minus;
+                </button>
+                <span class="form-control text-center" aria-live="polite">{{ quantity() }}</span>
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  aria-label="One more"
+                  [disabled]="quantity() >= maxQuantity"
+                  (click)="quantity.set(quantity() + 1)">
+                  +
+                </button>
+              </div>
+
+              <button
+                class="btn btn-dark btn-lg flex-grow-1"
+                type="button"
+                [disabled]="adding() || !selectedVariant()"
+                (click)="addToBasket()">
+                {{ adding() ? 'Adding…' : 'Add to basket' }}
               </button>
+            </div>
+
+            <div class="d-grid mt-2">
               <a class="btn btn-outline-dark" routerLink="/consultation">
                 Ask about this product
               </a>
             </div>
 
-            @if (item.deliverySurcharge) {
-              <p class="small text-muted mt-3 mb-0">
-                Delivery surcharge {{ item.deliverySurcharge | taka }}
-              </p>
+            @if (deliveryNote(); as note) {
+              <p class="small text-muted mt-3 mb-0">{{ note }}</p>
             }
           </div>
         </div>
@@ -269,14 +297,27 @@ import { ProductCard } from '../product-card/product-card';
       height: 100%;
       object-fit: cover;
     }
+
+    .wh-qty {
+      width: auto;
+      flex: 0 0 auto;
+    }
+
+    .wh-qty .form-control {
+      width: 3rem;
+      flex: 0 0 auto;
+    }
   `
 })
 export class ProductDetail implements OnInit {
   private readonly catalog = inject(CatalogService);
+  private readonly cart = inject(CartService);
+  private readonly toast = inject(ToastService);
   private readonly seo = inject(SeoService);
   private readonly serverResponse = inject(ServerResponseService);
   private readonly media = inject(MediaUrlService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly takaPipe = new TakaPipe();
 
   /** Bound from the route by `withComponentInputBinding`. */
   readonly slug = input.required<string>();
@@ -299,6 +340,10 @@ export class ProductDetail implements OnInit {
 
   protected readonly selectedVariantId = signal<number | null>(null);
   protected readonly activeImageId = signal<number | null>(null);
+
+  protected readonly quantity = signal(1);
+  protected readonly adding = signal(false);
+  protected readonly maxQuantity = MAX_QUANTITY_PER_LINE;
 
   protected readonly selectedVariant = computed<StorefrontVariant | null>(() => {
     const item = this.product();
@@ -333,6 +378,34 @@ export class ProductDetail implements OnInit {
     const variant = this.selectedVariant();
 
     return variant?.isOnOffer ? (variant.compareAtPrice ?? null) : null;
+  });
+
+  /**
+   * What delivery costs, when the product has its own figures.
+   *
+   * Both zones or nothing: a customer in Sylhet reading "Delivery ৳1,500"
+   * with no qualifier assumes it is theirs, and the basket then says
+   * otherwise. Products without figures are priced at the shop's ordinary
+   * rate, which the basket quotes once it knows the zone.
+   */
+  protected readonly deliveryNote = computed(() => {
+    const item = this.product();
+
+    if (!item) {
+      return null;
+    }
+
+    const inside = item.deliveryChargeInsideDhaka;
+    const outside = item.deliveryChargeOutsideDhaka;
+
+    if (inside == null && outside == null) {
+      return null;
+    }
+
+    const taka = (value: number | null | undefined) =>
+      value == null ? 'standard rate' : this.takaPipe.transform(value);
+
+    return `Delivery: ${taka(inside)} inside Dhaka · ${taka(outside)} outside Dhaka`;
   });
 
   /**
@@ -418,6 +491,39 @@ export class ProductDetail implements OnInit {
     this.failed.set(false);
     this.selectedVariantId.set(null);
     this.activeImageId.set(null);
+    this.quantity.set(1);
+  }
+
+  /**
+   * Puts the selected variant in the basket.
+   *
+   * Stays on the page. A furniture customer adding a bed is very likely to add
+   * the bedside tables next, and bouncing them to the basket after every
+   * "Add" turns a three-item order into three round trips. The badge in the
+   * header is what shows it worked.
+   */
+  protected addToBasket(): void {
+    const variant = this.selectedVariant();
+    const item = this.product();
+
+    if (!variant || !item || this.adding()) {
+      return;
+    }
+
+    this.adding.set(true);
+
+    this.cart
+      .add(variant.id, this.quantity())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.adding.set(false);
+          this.quantity.set(1);
+          this.toast.success(`${item.nameEn} added to your basket.`);
+        },
+        // The interceptor has already said what went wrong.
+        error: () => this.adding.set(false)
+      });
   }
 
   private onProduct(item: StorefrontProductDetail | null): void {

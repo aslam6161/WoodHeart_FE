@@ -34,5 +34,14 @@ export interface GeneralResponseOf<T> extends GeneralResponse {
 export const ErrorCodes = {
   validationFailed: 'common.validation_failed',
   invalidPhone: 'common.invalid_phone',
-  rateLimited: 'common.rate_limited'
+  rateLimited: 'common.rate_limited',
+
+  /** Checkout found nothing in the basket — it was emptied or checked out elsewhere. */
+  cartEmpty: 'ordering.cart.empty',
+
+  /** Something in the basket can no longer be bought; the basket page shows which. */
+  lineNotPurchasable: 'ordering.line_not_purchasable.conflict',
+
+  /** The chosen payment method is not offered for this address or amount. */
+  paymentMethodNotAvailable: 'payments.method_not_available.conflict'
 } as const;
