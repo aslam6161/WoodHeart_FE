@@ -60,7 +60,10 @@ export interface AdminProductDetail extends AdminProductListItem {
   warrantyMonths?: number | null;
   leadTimeDays?: number | null;
   assemblyRequired: boolean;
-  deliverySurcharge?: number | null;
+  /** What one costs to deliver inside Dhaka. Null means the store default for the zone. */
+  deliveryChargeInsideDhaka?: number | null;
+  /** The same, for everywhere else. */
+  deliveryChargeOutsideDhaka?: number | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
   ogImagePath?: string | null;
@@ -136,7 +139,10 @@ export interface CreateProductDto {
   warrantyMonths?: number | null;
   leadTimeDays?: number | null;
   assemblyRequired: boolean;
-  deliverySurcharge?: number | null;
+  /** What one costs to deliver inside Dhaka. Null means the store default for the zone. */
+  deliveryChargeInsideDhaka?: number | null;
+  /** The same, for everywhere else. */
+  deliveryChargeOutsideDhaka?: number | null;
   isFeatured: boolean;
   seoTitle?: string | null;
   seoDescription?: string | null;
