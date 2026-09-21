@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { preventUnsavedChangesGuard } from '../_guards/auth.guard';
+import { adminGuard, preventUnsavedChangesGuard } from '../_guards/auth.guard';
 
 /**
  * The admin panel's routes.
@@ -86,7 +86,34 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./orders/admin-order-detail').then(m => m.AdminOrderDetailPage),
     title: 'Order — WoodHeart Admin'
+  },
+
+  {
+    // Admin only, within a panel that is otherwise open to all staff: this
+    // is the VAT rate and the name on the invoice. The API enforces the same
+    // policy; the guard just saves a manager a 403.
+    path: 'settings',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./settings/admin-settings').then(m => m.AdminSettings),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Settings — WoodHeart Admin'
+  },
+
+  {
+    // Every staff role: the packer needs to see whether the bed is there.
+    // Recording a movement is narrower, and the page hides the form itself.
+    path: 'inventory/stock',
+    loadComponent: () =>
+      import('./inventory/admin-stock-list').then(m => m.AdminStockList),
+    title: 'Stock — WoodHeart Admin'
+  },
+
+  {
+    path: 'inventory/stock/:variantId',
+    loadComponent: () =>
+      import('./inventory/admin-stock-detail').then(m => m.AdminStockDetail),
+    title: 'Stock — WoodHeart Admin'
   }
 
-  // Phase 3 onward: inventory, discounts, consultations, customers, settings.
+  // Phase 3 onward: discounts, consultations, customers.
 ];

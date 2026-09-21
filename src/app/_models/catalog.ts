@@ -126,6 +126,20 @@ export interface StorefrontVariant {
   compareAtPrice?: number | null;
   isOnOffer: boolean;
   isDefault: boolean;
+
+  /**
+   * Whether one can be bought right now. Always true for made-to-order —
+   * those are built, not shelved — and false for a stocked variant with
+   * nothing available, including one nobody has stocked in yet.
+   */
+  isInStock: boolean;
+
+  /**
+   * How many can be bought, when that number is small enough to matter.
+   * Null for made-to-order and when there are plenty: "only 2 left" is
+   * worth saying, "47 left" is not.
+   */
+  availableQuantity?: number | null;
 }
 
 export interface StorefrontMedia {

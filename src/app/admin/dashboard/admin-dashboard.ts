@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminCatalogService } from '../../_services/admin/admin-catalog.service';
+import { AdminStockService } from '../../_services/admin/admin-stock.service';
 import { AccountService } from '../../_services/account.service';
 import { MediaUrlService } from '../../_services/media-url.service';
 import { AdminProductListItem } from '../../_models/admin-catalog';
+import { StockLevel } from '../../_models/inventory';
 
 /**
  * What needs attention today.
  *
- * <b>Counts only, and only the ones that mean something now.</b> Phase 1 has no
- * orders and no stock ledger, so a dashboard of revenue tiles would be four
- * zeroes pretending to be information. The two numbers here are real and both
- * are actionable: drafts nobody can buy, and live products with no photograph —
- * which render a blank tile in every listing and are the single most likely
- * reason a product is not selling.
+ * <b>Counts only, and only the ones that mean something now.</b> A dashboard
+ * of revenue tiles would be four zeroes pretending to be information. The
+ * numbers here are real and each is actionable: drafts nobody can buy, live
+ * products with no photograph — which render a blank tile in every listing
+ * and are the single most likely reason a product is not selling — and the
+ * stock lines at or below their reorder level, which are the next most
+ * likely.
  */
 @Component({
   selector: 'app-admin-dashboard',
@@ -39,6 +42,34 @@ import { AdminProductListItem } from '../../_models/admin-catalog';
           <!-- A draft is invisible to customers. That is the point of the
                status, and also the most common "why can nobody see this?". -->
           <span class="small text-muted">Not visible to customers</span>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-6">
+        <div class="border rounded p-3 h-100">
+          <div class="text-uppercase text-muted small">Low stock</div>
+          <div class="fs-3" [class.text-danger]="lowStock().length > 0">
+            {{ lowStockCount() ?? '—' }}
+          </div>
+
+          @if (lowStock().length > 0) {
+            <div class="small">
+              @for (line of lowStock().slice(0, 4); track line.variantId) {
+                <a class="d-block text-decoration-none"
+                   [routerLink]="['/admin/inventory/stock', line.variantId]">
+                  {{ line.productName }} · {{ line.variantName }}
+                  <span class="text-muted">({{ line.available }} left)</span>
+                </a>
+              }
+              @if ((lowStockCount() ?? 0) > 4) {
+                <a class="text-muted text-decoration-none" routerLink="/admin/inventory/stock" [queryParams]="{ low: 'true' }">
+                  and {{ (lowStockCount() ?? 0) - 4 }} more
+                </a>
+              }
+            </div>
+          } @else if (lowStockCount() === 0) {
+            <span class="small text-muted">Nothing needs reordering.</span>
+          }
         </div>
       </div>
 
@@ -88,12 +119,15 @@ import { AdminProductListItem } from '../../_models/admin-catalog';
 })
 export class AdminDashboard {
   private readonly catalog = inject(AdminCatalogService);
+  private readonly stock = inject(AdminStockService);
   private readonly account = inject(AccountService);
   private readonly media = inject(MediaUrlService);
 
   protected readonly liveCount = signal<number | null>(null);
   protected readonly draftCount = signal<number | null>(null);
   protected readonly missingPhotos = signal<AdminProductListItem[]>([]);
+  protected readonly lowStock = signal<StockLevel[]>([]);
+  protected readonly lowStockCount = signal<number | null>(null);
   protected readonly loading = signal(true);
 
   protected readonly mediaConfigured = this.media.isConfigured;
@@ -120,6 +154,13 @@ export class AdminDashboard {
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
+    });
+
+    // The first few low lines, and the total for "and N more". Unstocked
+    // variants count as low too — they are sold out on the storefront.
+    this.stock.search({ lowOnly: true, pageSize: 5 }).subscribe(result => {
+      this.lowStock.set(result.items);
+      this.lowStockCount.set(result.total);
     });
   }
 }

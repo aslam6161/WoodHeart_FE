@@ -42,6 +42,12 @@ export const ErrorCodes = {
   /** Something in the basket can no longer be bought; the basket page shows which. */
   lineNotPurchasable: 'ordering.line_not_purchasable.conflict',
 
+  /**
+   * The shelf cannot cover the basket: a line sold out, or has fewer left
+   * than asked for. `errors` is keyed by variant id with how many are left.
+   */
+  insufficientStock: 'ordering.insufficient_stock.conflict',
+
   /** The chosen payment method is not offered for this address or amount. */
   paymentMethodNotAvailable: 'payments.method_not_available.conflict',
 

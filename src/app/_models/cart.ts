@@ -55,6 +55,16 @@ export interface CartLine {
    */
   isAvailable: boolean;
 
+  /**
+   * The product is still sold, but there are none to sell. Distinguished
+   * from a withdrawn product because the advice differs: "check back" as
+   * opposed to "remove it".
+   */
+  isSoldOut: boolean;
+
+  /** The count, when it is small enough to matter. Null otherwise. */
+  availableQuantity?: number | null;
+
   /** Working days to build, for made-to-order items. Null for stocked ones. */
   leadTimeDays?: number | null;
 }

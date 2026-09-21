@@ -3,10 +3,10 @@
  *
  * A static list rather than an API call, and English rather than Bangla, for
  * one reason that matters more than either: the API decides the delivery zone
- * by comparing the district to the word "Dhaka". A district typed as "ঢাকা"
- * or "dhaka city" is priced as outside Dhaka, and the customer finds out in
- * the delivery line. Two selects make that impossible — every value here is
- * the spelling the API expects.
+ * by comparing the district to the word "Dhaka" (or "ঢাকা"). A district
+ * typed as "dhaka city" or "Dacca" is priced as outside Dhaka, and the
+ * customer finds out in the delivery line. Two selects make that impossible —
+ * every value here is the spelling the API expects.
  *
  * Spellings follow the government's current romanisation (Chattogram, Barishal,
  * Cumilla, Jashore, Bogura). Only "Dhaka" carries meaning on the API side; the
