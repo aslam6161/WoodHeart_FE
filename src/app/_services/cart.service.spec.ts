@@ -27,7 +27,8 @@ function basketWith(itemCount: number): Cart {
         unitPriceAtAdd: 85_000,
         priceChanged: false,
         lineTotal: 85_000 * itemCount,
-        isAvailable: true
+        isAvailable: true,
+        isSoldOut: false
       }
     ],
     totals: { ...EMPTY_CART.totals, itemCount, subtotal: 85_000 * itemCount }

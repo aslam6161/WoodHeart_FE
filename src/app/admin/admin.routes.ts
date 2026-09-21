@@ -97,7 +97,23 @@ export const adminRoutes: Routes = [
     loadComponent: () => import('./settings/admin-settings').then(m => m.AdminSettings),
     canDeactivate: [preventUnsavedChangesGuard],
     title: 'Settings — WoodHeart Admin'
+  },
+
+  {
+    // Every staff role: the packer needs to see whether the bed is there.
+    // Recording a movement is narrower, and the page hides the form itself.
+    path: 'inventory/stock',
+    loadComponent: () =>
+      import('./inventory/admin-stock-list').then(m => m.AdminStockList),
+    title: 'Stock — WoodHeart Admin'
+  },
+
+  {
+    path: 'inventory/stock/:variantId',
+    loadComponent: () =>
+      import('./inventory/admin-stock-detail').then(m => m.AdminStockDetail),
+    title: 'Stock — WoodHeart Admin'
   }
 
-  // Phase 3 onward: inventory, discounts, consultations, customers.
+  // Phase 3 onward: discounts, consultations, customers.
 ];
