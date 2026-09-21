@@ -73,9 +73,20 @@ export const adminRoutes: Routes = [
     path: 'brands',
     loadComponent: () => import('./brands/admin-brands').then(m => m.AdminBrands),
     title: 'Brands — WoodHeart Admin'
+  },
+
+  {
+    path: 'orders',
+    loadComponent: () => import('./orders/admin-order-list').then(m => m.AdminOrderList),
+    title: 'Orders — WoodHeart Admin'
+  },
+
+  {
+    path: 'orders/:orderNumber',
+    loadComponent: () =>
+      import('./orders/admin-order-detail').then(m => m.AdminOrderDetailPage),
+    title: 'Order — WoodHeart Admin'
   }
 
-  // Phase 2 onward: orders, inventory, discounts, consultations, customers,
-  // settings. The sidebar already lists them; they resolve to the panel's own
-  // catch-all until they exist.
+  // Phase 3 onward: inventory, discounts, consultations, customers, settings.
 ];

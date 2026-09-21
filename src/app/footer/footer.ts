@@ -36,6 +36,9 @@ import { RouterLink } from '@angular/router';
             <h6 class="fw-semibold">Help</h6>
             <ul class="list-unstyled small mb-0">
               <li>
+                <a class="link-secondary text-decoration-none" routerLink="/track">Track your order</a>
+              </li>
+              <li>
                 <a class="link-secondary text-decoration-none" routerLink="/contact">Contact us</a>
               </li>
             </ul>

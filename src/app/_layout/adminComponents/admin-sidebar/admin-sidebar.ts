@@ -61,13 +61,14 @@ export class AdminSidebar {
     { label: 'Dashboard', path: '/admin' },
     { label: 'Products', path: '/admin/products' },
     { label: 'Categories', path: '/admin/categories' },
-    { label: 'Brands', path: '/admin/brands' }
+    { label: 'Brands', path: '/admin/brands' },
+    { label: 'Orders', path: '/admin/orders' }
 
     // Everything below arrives with the phase that builds it. Listing a link
     // to a page that does not exist is worse than an incomplete menu: it reads
     // as a broken admin panel rather than an unfinished one.
     //
-    // Phase 2: Orders. Phase 3: Inventory, Discounts. Phase 4: Consultations.
+    // Phase 3: Inventory, Discounts. Phase 4: Consultations.
     // Phase 5: Settings (Admin-only — it exposes payment credentials).
   ];
 

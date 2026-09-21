@@ -43,5 +43,11 @@ export const ErrorCodes = {
   lineNotPurchasable: 'ordering.line_not_purchasable.conflict',
 
   /** The chosen payment method is not offered for this address or amount. */
-  paymentMethodNotAvailable: 'payments.method_not_available.conflict'
+  paymentMethodNotAvailable: 'payments.method_not_available.conflict',
+
+  /** The shop has started work on the order; cancelling is now a phone call. */
+  orderNotCancellable: 'ordering.order.not_cancellable.conflict',
+
+  /** Registration: somebody already has an account on this number. */
+  phoneTaken: 'identity.phone_taken'
 } as const;
