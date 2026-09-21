@@ -165,6 +165,11 @@ export interface OrderTimelineEntry {
   occurredAt: string;
 }
 
+/** Why the customer is stopping the order. Optional, and worth asking for. */
+export interface CancelOrder {
+  reason?: string | null;
+}
+
 /** A guest finding their order: the number off the SMS plus the phone it went to. */
 export interface GuestOrderLookup {
   orderNumber: string;
@@ -189,4 +194,32 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   Cancelled: 'Cancelled',
   Returned: 'Returned',
   Refunded: 'Refunded'
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  Unpaid: 'Unpaid',
+  AdvancePaid: 'Advance paid',
+  Paid: 'Paid',
+  PartiallyRefunded: 'Partly refunded',
+  Refunded: 'Refunded',
+  Failed: 'Failed'
+};
+
+/**
+ * What the status means for the customer, in a sentence.
+ *
+ * A badge that says "Confirmed" answers "what is it" and not "what now". This
+ * is the "what now", and it is what the order page leads with.
+ */
+export const ORDER_STATUS_EXPLANATIONS: Record<OrderStatus, string> = {
+  Pending: 'We have your order and will confirm it shortly.',
+  Confirmed: 'Confirmed. We are getting it ready.',
+  Processing: 'Being prepared for delivery.',
+  ReadyToShip: 'Packed and waiting for the van.',
+  Shipped: 'On its way. Our rider will call before arriving.',
+  Delivered: 'Delivered. We hope you love it.',
+  Completed: 'Completed. Thank you for shopping with WoodHeart.',
+  Cancelled: 'This order was cancelled.',
+  Returned: 'This order was returned.',
+  Refunded: 'This order was refunded.'
 };

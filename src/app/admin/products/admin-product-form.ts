@@ -216,11 +216,25 @@ import {
                 <div class="form-text">The struck-through "was" price. Leave empty for no offer.</div>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label" for="deliverySurcharge">Delivery surcharge (৳)</label>
-                <input id="deliverySurcharge" class="form-control" type="number" min="0"
-                       formControlName="deliverySurcharge" />
-                <div class="form-text">For bulky items, on top of the zone fee.</div>
+              <!-- Delivery is priced per product, per zone, and the order's
+                   charge is the sum across the basket (times quantity). Empty
+                   means "the store's ordinary rate for the zone" — never free,
+                   so a field nobody filled in cannot give a wardrobe's carriage
+                   away. Staff can still correct the total on the order. -->
+              <div class="row g-2 mb-1">
+                <div class="col-6">
+                  <label class="form-label" for="deliveryChargeInsideDhaka">Delivery inside Dhaka (৳)</label>
+                  <input id="deliveryChargeInsideDhaka" class="form-control" type="number" min="0"
+                         formControlName="deliveryChargeInsideDhaka" placeholder="Store default" />
+                </div>
+                <div class="col-6">
+                  <label class="form-label" for="deliveryChargeOutsideDhaka">Outside Dhaka (৳)</label>
+                  <input id="deliveryChargeOutsideDhaka" class="form-control" type="number" min="0"
+                         formControlName="deliveryChargeOutsideDhaka" placeholder="Store default" />
+                </div>
+              </div>
+              <div class="form-text mb-3">
+                What one of these costs to deliver. Leave empty to use the store's rate for the zone.
               </div>
             </div>
 
@@ -322,7 +336,8 @@ export class AdminProductForm implements OnInit, HasUnsavedChanges {
     leadTimeDays: [null as number | null],
     assemblyRequired: [false],
     isFeatured: [false],
-    deliverySurcharge: [null as number | null],
+    deliveryChargeInsideDhaka: [null as number | null],
+    deliveryChargeOutsideDhaka: [null as number | null],
     seoTitle: [''],
     seoDescription: ['']
   });
@@ -460,7 +475,8 @@ export class AdminProductForm implements OnInit, HasUnsavedChanges {
       // A lead time only means something for a product that is built to order.
       leadTimeDays: value.productType === 'MadeToOrder' ? value.leadTimeDays : null,
       assemblyRequired: value.assemblyRequired,
-      deliverySurcharge: value.deliverySurcharge,
+      deliveryChargeInsideDhaka: value.deliveryChargeInsideDhaka,
+      deliveryChargeOutsideDhaka: value.deliveryChargeOutsideDhaka,
       isFeatured: value.isFeatured,
       seoTitle: blankToNull(value.seoTitle),
       seoDescription: blankToNull(value.seoDescription)
@@ -507,7 +523,8 @@ function toFormValue(product: AdminProductDetail) {
     warrantyMonths: product.warrantyMonths ?? null,
     leadTimeDays: product.leadTimeDays ?? null,
     assemblyRequired: product.assemblyRequired,
-    deliverySurcharge: product.deliverySurcharge ?? null,
+    deliveryChargeInsideDhaka: product.deliveryChargeInsideDhaka ?? null,
+    deliveryChargeOutsideDhaka: product.deliveryChargeOutsideDhaka ?? null,
     seoTitle: product.seoTitle ?? '',
     seoDescription: product.seoDescription ?? ''
   };

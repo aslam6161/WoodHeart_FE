@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 import { GeneralResponseOf } from '../_models/generalResponse';
 import { Cart, DeliveryZone, EMPTY_CART } from '../_models/cart';
 import { silentFailure } from '../_interceptors/http-context';
+import { AccountService } from './account.service';
 
 /**
  * The basket, held as state.
@@ -27,6 +28,7 @@ import { silentFailure } from '../_interceptors/http-context';
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private readonly http = inject(HttpClient);
+  private readonly account = inject(AccountService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly baseUrl = `${environment.apiUrl}cart`;
 
@@ -64,7 +66,14 @@ export class CartService {
     }
 
     this.loading = true;
-    this.refresh().subscribe();
+
+    // After the session restore, not before. On a full page load the access
+    // token is gone and comes back from the refresh cookie a round trip
+    // later; a basket asked for in that gap is asked for as a guest, and a
+    // signed-in customer gets an empty badge for the basket they have. The
+    // restore is memoised, so this costs nothing the guards were not already
+    // paying, and it resolves at once for a visitor with no session.
+    this.account.ensureRestored().then(() => this.refresh().subscribe());
   }
 
   /** Re-reads the basket from the API, e.g. after signing in merges a guest's lines. */

@@ -7,6 +7,12 @@ import {
   OrderTotals,
   PaymentStatus
 } from './order';
+import { PagedResult } from './pagination';
+
+// Shared with the storefront's own order pages, and kept there so the admin
+// chunk is not pulled into the customer bundle for a label.
+export { PAYMENT_STATUS_LABELS } from './order';
+export type { PagedResult } from './pagination';
 
 /**
  * Orders as the admin panel sees them.
@@ -98,14 +104,6 @@ export interface OrderStatusCount {
   count: number;
 }
 
-/** The shape the order endpoints page with — in the body, not an `X-Pagination` header. */
-export interface PagedResult<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 export interface AdminOrderQuery {
   status?: OrderStatus | null;
   term?: string | null;
@@ -152,15 +150,6 @@ export const ORDER_STATUSES: readonly OrderStatus[] = [
   'Returned',
   'Refunded'
 ];
-
-export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  Unpaid: 'Unpaid',
-  AdvancePaid: 'Advance paid',
-  Paid: 'Paid',
-  PartiallyRefunded: 'Partly refunded',
-  Refunded: 'Refunded',
-  Failed: 'Failed'
-};
 
 export const FULFILMENT_STATUS_LABELS: Record<FulfilmentStatus, string> = {
   Unfulfilled: 'Not yet shipped',

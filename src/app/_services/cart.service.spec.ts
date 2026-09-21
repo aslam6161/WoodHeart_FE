@@ -53,14 +53,34 @@ describe('CartService', () => {
 
   afterEach(() => http.verify());
 
+  /**
+   * Lets the session restore settle. `ensureLoaded` asks for the basket only
+   * after `AccountService.ensureRestored()` resolves, which is a promise
+   * around the refresh request — so the test answers that request, then
+   * yields for the promise chain before the basket request can exist.
+   */
+  async function settleRestore(signedIn = false): Promise<void> {
+    const refresh = http.expectOne(`${environment.apiUrl}account/refresh`);
+
+    if (signedIn) {
+      refresh.flush({ isSuccess: true, data: { id: 3, roles: [], accessToken: 't' } });
+    } else {
+      refresh.flush({ isSuccess: false }, { status: 401, statusText: 'Unauthorized' });
+    }
+
+    await new Promise(resolve => setTimeout(resolve));
+  }
+
   describe('loading', () => {
-    it('asks the API once, however many pages ask for it', () => {
+    it('asks the API once, however many pages ask for it', async () => {
       // The header and the basket page both call this on construction. Two
       // requests for the same basket on one page load is the bug this guards.
       configure('browser');
 
       service.ensureLoaded();
       service.ensureLoaded();
+
+      await settleRestore();
 
       http.expectOne(base).flush({ isSuccess: true, data: basketWith(2) });
 
@@ -69,6 +89,25 @@ describe('CartService', () => {
       http.expectNone(base);
       expect(service.itemCount()).toBe(2);
       expect(service.loaded()).toBe(true);
+    });
+
+    it('waits for the session restore before asking, so a member gets their own basket', async () => {
+      // On a full page load the token is in memory and gone; it comes back
+      // from the refresh cookie. A basket fetched before that arrives is
+      // fetched as a guest — an empty badge for a customer with a wardrobe
+      // in their basket. This is what the browser showed the day members
+      // first used the storefront.
+      configure('browser');
+
+      service.ensureLoaded();
+
+      http.expectNone(base);
+
+      await settleRestore(true);
+
+      http.expectOne(base).flush({ isSuccess: true, data: basketWith(1) });
+
+      expect(service.itemCount()).toBe(1);
     });
 
     it('never loads on the server', () => {
@@ -84,12 +123,14 @@ describe('CartService', () => {
       expect(service.itemCount()).toBe(0);
     });
 
-    it('treats a failed load as an empty basket rather than an error', () => {
+    it('treats a failed load as an empty basket rather than an error', async () => {
       // A first-time visitor has no basket and must not meet a red toast
       // about it on the home page.
       configure('browser');
 
       service.ensureLoaded();
+
+      await settleRestore();
 
       http.expectOne(base).flush({ isSuccess: false }, { status: 500, statusText: 'Boom' });
 
