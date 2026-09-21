@@ -31,6 +31,13 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    // The same reasoning, for the customer's own orders: the session lives in
+    // a cookie the server render never sees, so a server render of this area
+    // would fail the guard and hand back the sign-in page for every refresh.
+    path: 'account/**',
+    renderMode: RenderMode.Client
+  },
+  {
     path: 'not-found',
     renderMode: RenderMode.Server,
     // The catch-all route redirects every unmatched URL here, so this is the

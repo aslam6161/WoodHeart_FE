@@ -26,3 +26,17 @@ export class PaginationParams {
   pageNumber = 1;
   pageSize = 20;
 }
+
+/**
+ * The other paging shape: in the body, not the header.
+ *
+ * The order endpoints answer this way — `GeneralResponse<PagedResult<T>>` —
+ * and the catalogue answers with the array-plus-header above. Mirrors
+ * `PagedResult<T>` on the backend.
+ */
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
