@@ -340,10 +340,18 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                   <div class="alert alert-danger py-2 small" role="alert">{{ failure() }}</div>
                 }
 
+                @if (basketProblem(); as problem) {
+                  <!-- Why the button is off. Fixing it means changing the
+                       basket, which is the other page. -->
+                  <div class="alert alert-warning py-2 small" role="alert">
+                    {{ problem }} <a routerLink="/cart">Review your basket</a>.
+                  </div>
+                }
+
                 <button
                   class="btn btn-dark w-100 btn-lg"
                   type="submit"
-                  [disabled]="placing() || !methods().length || basket.hasUnavailableLines">
+                  [disabled]="placing() || !methods().length || basketProblem()">
                   {{ placing() ? 'Placing your order…' : 'Place order · ' + (total() | taka) }}
                 </button>
 
@@ -422,6 +430,33 @@ export class CheckoutPage implements OnInit {
    * confirmation page shows its figure, not this one.
    */
   protected readonly total = computed(() => this.cart.cart().totals.grandTotal + this.surcharge());
+
+  /**
+   * What stops the order being placed, if anything: a line that cannot be
+   * bought, or one asking for more than the shelf has. The API would refuse
+   * either; saying so here saves the round trip and the 409.
+   */
+  protected readonly basketProblem = computed<string | null>(() => {
+    const basket = this.cart.cart();
+
+    if (basket.lines.some(line => line.isSoldOut)) {
+      return 'Something in your basket has sold out.';
+    }
+
+    if (basket.hasUnavailableLines) {
+      return 'Something in your basket is no longer available.';
+    }
+
+    const short = basket.lines.find(
+      line => line.availableQuantity != null && line.quantity > line.availableQuantity
+    );
+
+    if (short) {
+      return `Only ${short.availableQuantity} of ${short.productNameEn} (${short.variantName}) left; you asked for ${short.quantity}.`;
+    }
+
+    return null;
+  });
 
   /**
    * One key per visit to this page.
@@ -612,9 +647,12 @@ export class CheckoutPage implements OnInit {
 
             case ErrorCodes.cartEmpty:
             case ErrorCodes.lineNotPurchasable:
+            case ErrorCodes.insufficientStock:
               // The basket changed under the page — something sold out, or a
               // second tab checked it out. Re-read it and let the page fall
-              // through to whichever state it is now in.
+              // through to whichever state it is now in. For stock, the
+              // message names the line and how many are left; the basket
+              // page shows the same beside the line once it has re-read.
               this.cart.refresh().subscribe();
               this.failure.set(body?.message ?? 'Your basket has changed. Please review it.');
               break;
@@ -640,9 +678,15 @@ export class CheckoutPage implements OnInit {
    * the customer presses it.
    */
   private resolveZone(district: string, upazila: string | undefined): DeliveryZone {
-    const outlying = ['savar', 'dhamrai', 'nawabganj', 'dohar', 'keraniganj'];
+    // In both scripts, as the API has it: a customer who types their address
+    // in Bangla is in the same Dhaka.
+    const dhaka = ['dhaka', 'ঢাকা'];
+    const outlying = [
+      'savar', 'dhamrai', 'nawabganj', 'dohar', 'keraniganj',
+      'সাভার', 'ধামরাই', 'নবাবগঞ্জ', 'দোহার', 'কেরানীগঞ্জ'
+    ];
 
-    if (district.trim().toLowerCase() !== 'dhaka') {
+    if (!dhaka.includes(district.trim().toLowerCase())) {
       return 'OutsideDhaka';
     }
 

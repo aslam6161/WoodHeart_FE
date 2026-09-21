@@ -141,6 +141,14 @@ import { ProductCard } from '../product-card/product-card';
               <p class="small text-muted">
                 Made to order &middot; about {{ item.leadTimeDays }} working days
               </p>
+            } @else if (item.productType === 'Stocked') {
+              <!-- The count only when it is small: "only 2 left" decides a
+                   purchase, "47 left" is noise, and the API sends null for
+                   noise. Sold out stays on the page rather than hiding the
+                   product — the customer can still ask about it. -->
+              @if (stockNote(); as note) {
+                <p class="small mb-0" [class]="note.tone" aria-live="polite">{{ note.text }}</p>
+              }
             }
 
             @if (item.shortDescriptionEn; as summary) {
@@ -164,8 +172,12 @@ import { ProductCard } from '../product-card/product-card';
                       [class.btn-dark]="variant.id === selectedVariantId()"
                       [class.btn-outline-secondary]="variant.id !== selectedVariantId()"
                       [attr.aria-pressed]="variant.id === selectedVariantId()"
-                      (click)="selectedVariantId.set(variant.id)">
+                      [class.wh-variant-sold-out]="!variant.isInStock"
+                      (click)="selectVariant(variant)">
                       {{ variant.variantName }}
+                      @if (!variant.isInStock) {
+                        <span class="visually-hidden">(sold out)</span>
+                      }
                     </button>
                   }
                 </div>
@@ -194,7 +206,7 @@ import { ProductCard } from '../product-card/product-card';
                   class="btn btn-outline-secondary"
                   type="button"
                   aria-label="One more"
-                  [disabled]="quantity() >= maxQuantity"
+                  [disabled]="quantity() >= maxQuantity()"
                   (click)="quantity.set(quantity() + 1)">
                   +
                 </button>
@@ -203,9 +215,9 @@ import { ProductCard } from '../product-card/product-card';
               <button
                 class="btn btn-dark btn-lg flex-grow-1"
                 type="button"
-                [disabled]="adding() || !selectedVariant()"
+                [disabled]="adding() || !selectedVariant() || soldOut()"
                 (click)="addToBasket()">
-                {{ adding() ? 'Adding…' : 'Add to basket' }}
+                {{ soldOut() ? 'Sold out' : adding() ? 'Adding…' : 'Add to basket' }}
               </button>
             </div>
 
@@ -307,6 +319,13 @@ import { ProductCard } from '../product-card/product-card';
       width: 3rem;
       flex: 0 0 auto;
     }
+
+    /* Still a button: a customer can pick the sold-out size to see that it
+       is sold out and ask about it, rather than wondering why it is missing. */
+    .wh-variant-sold-out {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
   `
 })
 export class ProductDetail implements OnInit {
@@ -343,7 +362,6 @@ export class ProductDetail implements OnInit {
 
   protected readonly quantity = signal(1);
   protected readonly adding = signal(false);
-  protected readonly maxQuantity = MAX_QUANTITY_PER_LINE;
 
   protected readonly selectedVariant = computed<StorefrontVariant | null>(() => {
     const item = this.product();
@@ -378,6 +396,49 @@ export class ProductDetail implements OnInit {
     const variant = this.selectedVariant();
 
     return variant?.isOnOffer ? (variant.compareAtPrice ?? null) : null;
+  });
+
+  protected readonly soldOut = computed(() => {
+    const variant = this.selectedVariant();
+
+    return !!variant && !variant.isInStock;
+  });
+
+  /**
+   * The most the stepper will go to: the basket's ceiling, or the shelf's
+   * when the shelf is lower. Stops the "+" a step before the number the API
+   * would refuse at checkout.
+   */
+  protected readonly maxQuantity = computed(() => {
+    const available = this.selectedVariant()?.availableQuantity;
+
+    return available == null
+      ? MAX_QUANTITY_PER_LINE
+      : Math.max(1, Math.min(MAX_QUANTITY_PER_LINE, available));
+  });
+
+  /** What the page says about the shelf, for a stocked product. */
+  protected readonly stockNote = computed<{ text: string; tone: string } | null>(() => {
+    const variant = this.selectedVariant();
+
+    if (!variant) {
+      return null;
+    }
+
+    if (!variant.isInStock) {
+      return { text: 'Sold out', tone: 'text-danger fw-semibold' };
+    }
+
+    const available = variant.availableQuantity;
+
+    if (available != null) {
+      return {
+        text: available === 1 ? 'Only 1 left' : `Only ${available} left`,
+        tone: 'text-warning-emphasis fw-semibold'
+      };
+    }
+
+    return { text: 'In stock', tone: 'text-success' };
   });
 
   /**
@@ -494,6 +555,18 @@ export class ProductDetail implements OnInit {
     this.quantity.set(1);
   }
 
+  protected selectVariant(variant: StorefrontVariant): void {
+    this.selectedVariantId.set(variant.id);
+
+    // A quantity chosen for the 6ft does not carry to a 5ft with two left.
+    const ceiling =
+      variant.availableQuantity == null ? MAX_QUANTITY_PER_LINE : Math.max(1, variant.availableQuantity);
+
+    if (this.quantity() > ceiling) {
+      this.quantity.set(ceiling);
+    }
+  }
+
   /**
    * Puts the selected variant in the basket.
    *
@@ -506,7 +579,7 @@ export class ProductDetail implements OnInit {
     const variant = this.selectedVariant();
     const item = this.product();
 
-    if (!variant || !item || this.adding()) {
+    if (!variant || !item || this.adding() || !variant.isInStock) {
       return;
     }
 
@@ -581,6 +654,13 @@ export class ProductDetail implements OnInit {
     const prices = item.variants.map(variant => variant.price);
     const image = item.seo.ogImagePath ? [this.seo.media(item.seo.ogImagePath)] : undefined;
 
+    // In stock if anything is. A search result that says "out of stock"
+    // against a product with one size sold out and three on the shelf costs
+    // the click that would have bought one of the three.
+    const availability = item.variants.some(variant => variant.isInStock)
+      ? 'https://schema.org/InStock'
+      : 'https://schema.org/OutOfStock';
+
     return {
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -603,12 +683,14 @@ export class ProductDetail implements OnInit {
               lowPrice: Math.min(...prices),
               highPrice: Math.max(...prices),
               offerCount: prices.length,
+              availability,
               url: this.seo.absolute(item.seo.canonicalPath)
             }
           : {
               '@type': 'Offer',
               priceCurrency: item.currency,
               price: prices[0] ?? item.fromPrice,
+              availability,
               url: this.seo.absolute(item.seo.canonicalPath)
             },
       // Only when there are real reviews. An aggregateRating with a count of

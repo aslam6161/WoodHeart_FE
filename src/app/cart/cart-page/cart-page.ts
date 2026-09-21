@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../../_services/cart.service';
@@ -52,8 +52,15 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
 
         @if (basket.hasUnavailableLines) {
           <div class="alert alert-danger py-2 small" role="alert">
-            Something in your basket is no longer available. Remove it to continue to
-            checkout.
+            Something in your basket has sold out or is no longer available. Remove it to
+            continue to checkout.
+          </div>
+        } @else if (shortLines().length > 0) {
+          <!-- Not blocked outright: the customer may well want the two that
+               are left. The line says how many; the button waits until the
+               quantity fits. -->
+          <div class="alert alert-warning py-2 small" role="alert">
+            We have fewer of something than you asked for. Reduce the quantity to continue.
           </div>
         }
 
@@ -92,8 +99,21 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                     </a>
                     <div class="small text-muted">{{ line.variantName }}</div>
 
-                    @if (!line.isAvailable) {
+                    @if (line.isSoldOut) {
+                      <!-- Different advice from "withdrawn": this one may
+                           come back, and the link is how to ask when. -->
+                      <div class="small text-danger">
+                        Sold out &middot;
+                        <a class="text-danger" routerLink="/consultation">ask us when it is back</a>
+                      </div>
+                    } @else if (!line.isAvailable) {
                       <div class="small text-danger">No longer available</div>
+                    } @else if (isShort(line)) {
+                      <div class="small text-warning-emphasis fw-semibold">
+                        Only {{ line.availableQuantity }} left
+                      </div>
+                    } @else if (line.availableQuantity != null) {
+                      <div class="small text-warning-emphasis">Only {{ line.availableQuantity }} left</div>
                     } @else if (line.leadTimeDays) {
                       <div class="small text-muted">
                         Made to order &middot; about {{ line.leadTimeDays }} working days
@@ -123,7 +143,7 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                           [disabled]="
                             busyLine() === line.id ||
                             !line.isAvailable ||
-                            line.quantity >= maxQuantity
+                            line.quantity >= maxQuantityFor(line)
                           "
                           (click)="setQuantity(line, line.quantity + 1)">
                           +
@@ -237,8 +257,8 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
               <a
                 class="btn btn-dark w-100"
                 routerLink="/checkout"
-                [class.disabled]="basket.hasUnavailableLines"
-                [attr.aria-disabled]="basket.hasUnavailableLines || null">
+                [class.disabled]="!canCheckout()"
+                [attr.aria-disabled]="!canCheckout() || null">
                 Continue to checkout
               </a>
 
@@ -299,7 +319,15 @@ export class CartPage {
   /** The line whose request is in flight, so its own buttons wait and the rest do not. */
   protected readonly busyLine = signal<number | null>(null);
   protected readonly zoneBusy = signal(false);
-  protected readonly maxQuantity = MAX_QUANTITY_PER_LINE;
+
+  /** Lines asking for more than the shelf has. The API would refuse these at checkout. */
+  protected readonly shortLines = computed(() =>
+    this.cart.cart().lines.filter(line => this.isShort(line))
+  );
+
+  protected readonly canCheckout = computed(
+    () => !this.cart.cart().hasUnavailableLines && this.shortLines().length === 0
+  );
 
   constructor() {
     this.seo.apply({
@@ -311,6 +339,17 @@ export class CartPage {
     });
 
     this.cart.ensureLoaded();
+  }
+
+  protected isShort(line: CartLine): boolean {
+    return line.isAvailable && line.availableQuantity != null && line.quantity > line.availableQuantity;
+  }
+
+  /** The basket's ceiling, or the shelf's when it is lower. */
+  protected maxQuantityFor(line: CartLine): number {
+    return line.availableQuantity == null
+      ? MAX_QUANTITY_PER_LINE
+      : Math.min(MAX_QUANTITY_PER_LINE, line.availableQuantity);
   }
 
   protected setQuantity(line: CartLine, quantity: number): void {
