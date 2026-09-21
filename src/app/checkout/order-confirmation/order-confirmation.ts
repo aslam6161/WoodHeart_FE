@@ -8,15 +8,14 @@ import {
   signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AccountService } from '../../_services/account.service';
 import { OrderService } from '../../_services/order.service';
 import { SeoService } from '../../_services/seo.service';
-import { ORDER_STATUS_LABELS, OrderDetail } from '../../_models/order';
-import { TakaPipe } from '../../_pipes/taka.pipe';
+import { OrderDetail } from '../../_models/order';
+import { OrderDetailCard } from '../../orders/order-detail-card/order-detail-card';
 
 /**
  * "Thank you — your order is placed."
@@ -34,7 +33,7 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
  */
 @Component({
   selector: 'app-order-confirmation',
-  imports: [RouterLink, TakaPipe, DatePipe],
+  imports: [RouterLink, OrderDetailCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container py-5">
@@ -69,92 +68,28 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
           </div>
 
           @if (order(); as detail) {
-            <div class="row g-4 mb-4">
-              <div class="col-12 col-md-6">
-                <h2 class="h6 text-uppercase text-muted">Delivering to</h2>
-                <address class="small mb-0">
-                  <strong>{{ detail.contactName }}</strong><br />
-                  {{ detail.contactPhone }}<br />
-                  {{ detail.shippingAddress.addressLine }}<br />
-                  @if (detail.shippingAddress.landmark; as landmark) {
-                    {{ landmark }}<br />
-                  }
-                  @if (detail.shippingAddress.area; as area) {
-                    {{ area }},
-                  }
-                  {{ detail.shippingAddress.district }}, {{ detail.shippingAddress.division }}
-                </address>
-              </div>
-
-              <div class="col-12 col-md-6">
-                <h2 class="h6 text-uppercase text-muted">Payment</h2>
-                <p class="small mb-1">
-                  {{ detail.paymentMethodCode === 'cod' ? 'Cash on delivery' : detail.paymentMethodCode }}
-                </p>
-                <p class="small text-muted mb-0">
-                  Status: {{ statusLabel(detail) }} &middot; placed
-                  {{ detail.placedAt | date: 'd MMM yyyy, h:mm a' }}
-                </p>
-              </div>
-            </div>
-
-            <h2 class="h6 text-uppercase text-muted">Items</h2>
-            <ul class="list-unstyled border-top mb-3">
-              @for (line of detail.lines; track line.id) {
-                <li class="d-flex justify-content-between gap-3 py-2 border-bottom small">
-                  <span>
-                    {{ line.quantity }} &times; {{ line.productName }}
-                    <span class="text-muted">{{ line.variantName }}</span>
-                  </span>
-                  <span class="flex-shrink-0">{{ line.lineTotal | taka }}</span>
-                </li>
-              }
-            </ul>
-
-            <dl class="row small mb-0 justify-content-end">
-              <dt class="col-8 col-md-9 fw-normal text-md-end">Subtotal</dt>
-              <dd class="col-4 col-md-3 text-end">{{ detail.totals.subtotal | taka }}</dd>
-
-              @if (detail.totals.discountTotal > 0) {
-                <dt class="col-8 col-md-9 fw-normal text-md-end">Discount</dt>
-                <dd class="col-4 col-md-3 text-end">&minus;{{ detail.totals.discountTotal | taka }}</dd>
-              }
-
-              <dt class="col-8 col-md-9 fw-normal text-md-end">Delivery</dt>
-              <dd class="col-4 col-md-3 text-end">
-                @if (detail.totals.deliveryWaived && detail.totals.deliveryFee === 0) {
-                  Free
-                } @else {
-                  {{ detail.totals.deliveryFee | taka }}
-                }
-              </dd>
-
-              @if (detail.totals.paymentSurcharge > 0) {
-                <dt class="col-8 col-md-9 fw-normal text-md-end">Payment charge</dt>
-                <dd class="col-4 col-md-3 text-end">{{ detail.totals.paymentSurcharge | taka }}</dd>
-              }
-
-              <dt class="col-8 col-md-9 text-md-end">Total</dt>
-              <dd class="col-4 col-md-3 text-end fw-semibold">{{ detail.totals.grandTotal | taka }}</dd>
-
-              @if (detail.totals.pricesIncludeVat && detail.totals.vatAmount > 0) {
-                <dd class="col-12 text-md-end text-muted mb-0">
-                  Includes VAT at {{ detail.totals.vatRatePercent }}%:
-                  {{ detail.totals.vatAmount | taka }}
-                </dd>
-              }
-            </dl>
+            <app-order-detail-card [order]="detail" [showStatus]="false" [showTimeline]="false" />
           } @else if (loading()) {
             <p class="text-muted small text-center">Loading your order…</p>
           } @else {
             <p class="text-muted small text-center">
-              The full details are in your SMS confirmation.
+              The full details are in your SMS confirmation. You can also
+              <a routerLink="/track" [queryParams]="{ order: orderNumber() }">look the order up</a>
+              with the number and your mobile number.
             </p>
           }
 
           <div class="d-grid d-sm-flex justify-content-sm-center gap-2 mt-4">
             <a class="btn btn-dark" routerLink="/products">Continue shopping</a>
-            <a class="btn btn-outline-dark" routerLink="/">Back to home</a>
+            @if (account.isAuthenticated()) {
+              <a class="btn btn-outline-dark" [routerLink]="['/account/orders', orderNumber()]">
+                View this order
+              </a>
+            } @else {
+              <a class="btn btn-outline-dark" routerLink="/track" [queryParams]="{ order: orderNumber() }">
+                Track this order
+              </a>
+            }
           </div>
         </div>
       </div>
@@ -175,7 +110,7 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
 })
 export class OrderConfirmation implements OnInit {
   private readonly orders = inject(OrderService);
-  private readonly account = inject(AccountService);
+  protected readonly account = inject(AccountService);
   private readonly router = inject(Router);
   private readonly seo = inject(SeoService);
   private readonly destroyRef = inject(DestroyRef);
@@ -235,9 +170,5 @@ export class OrderConfirmation implements OnInit {
         this.loading.set(false);
         this.order.set(detail);
       });
-  }
-
-  protected statusLabel(detail: OrderDetail): string {
-    return ORDER_STATUS_LABELS[detail.status] ?? detail.status;
   }
 }

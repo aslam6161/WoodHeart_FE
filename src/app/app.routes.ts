@@ -3,7 +3,7 @@ import { DefaultLayout } from './_layout/default-layout/default-layout';
 import { Home } from './home/home';
 import { NotFound } from './errors/not-found/not-found';
 import { ServerError } from './errors/server-error/server-error';
-import { staffGuard } from './_guards/auth.guard';
+import { authGuard, staffGuard } from './_guards/auth.guard';
 
 /**
  * Two top-level shells: the public storefront and the admin panel.
@@ -63,13 +63,30 @@ export const routes: Routes = [
         title: 'Order placed'
       },
 
-      // Phase 2 onward:
-      // { path: 'account', canActivate: [authGuard], loadChildren: ... },
+      // Anyone: a guest tracking their order by number and phone.
+      {
+        path: 'track',
+        loadComponent: () => import('./orders/track-order/track-order').then(m => m.TrackOrder),
+        title: 'Track your order'
+      },
+
+      // Signed-in customers: their orders. Client-rendered — see
+      // app.routes.server.ts for why an authenticated area cannot be SSR'd.
+      {
+        path: 'account',
+        canActivate: [authGuard],
+        loadChildren: () => import('./account/account.routes').then(m => m.accountRoutes)
+      },
 
       {
         path: 'login',
         loadComponent: () => import('./account/login/login').then(m => m.Login),
         title: 'Sign in'
+      },
+      {
+        path: 'register',
+        loadComponent: () => import('./account/register/register').then(m => m.Register),
+        title: 'Create an account'
       },
 
       { path: 'not-found', component: NotFound, title: 'Page not found' },
