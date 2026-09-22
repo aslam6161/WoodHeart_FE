@@ -24,6 +24,7 @@ import { DeliveryZone } from '../../_models/cart';
 import { ErrorCodes, GeneralResponse } from '../../_models/generalResponse';
 import { DeliveryAddress, PaymentMethod, PlaceOrder } from '../../_models/order';
 import { TakaPipe } from '../../_pipes/taka.pipe';
+import { CouponBox } from '../../cart/coupon-box/coupon-box';
 
 /**
  * Checkout: who, where, how to pay, place the order.
@@ -44,7 +45,7 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
  */
 @Component({
   selector: 'app-checkout-page',
-  imports: [ReactiveFormsModule, RouterLink, TakaPipe],
+  imports: [ReactiveFormsModule, RouterLink, TakaPipe, CouponBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container py-4">
@@ -296,13 +297,33 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                   }
                 </ul>
 
+                <!-- Here as well as on the basket page. A code arrives in an
+                     SMS while somebody is already typing their address, and
+                     sending them back a page to use it is how a basket is
+                     abandoned. -->
+                <div class="mb-3">
+                  <app-coupon-box />
+                </div>
+
                 <dl class="row small mb-0">
                   <dt class="col-7 fw-normal">Subtotal</dt>
                   <dd class="col-5 text-end">{{ basket.totals.subtotal | taka }}</dd>
 
-                  @if (basket.totals.discountTotal > 0) {
-                    <dt class="col-7 fw-normal">Discount</dt>
-                    <dd class="col-5 text-end">&minus;{{ basket.totals.discountTotal | taka }}</dd>
+                  @for (discount of goodsDiscounts(); track discount.discountId) {
+                    <dt class="col-7 fw-normal text-success">
+                      {{ discount.name }}
+                      @if (discount.code) {
+                        <span class="text-muted">({{ discount.code }})</span>
+                      }
+                    </dt>
+                    <dd class="col-5 text-end text-success">&minus;{{ discount.amount | taka }}</dd>
+                  }
+
+                  @if (goodsDiscounts().length === 0 && basket.totals.discountTotal > 0) {
+                    <dt class="col-7 fw-normal text-success">Discount</dt>
+                    <dd class="col-5 text-end text-success">
+                      &minus;{{ basket.totals.discountTotal | taka }}
+                    </dd>
                   }
 
                   <dt class="col-7 fw-normal">Delivery</dt>
@@ -315,6 +336,10 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                       {{ basket.totals.deliveryFee | taka }}
                     }
                   </dd>
+
+                  @if (freeDeliveryName(); as name) {
+                    <dd class="col-12 text-success mb-0">{{ name }}</dd>
+                  }
 
                   @if (surcharge(); as extra) {
                     <dt class="col-7 fw-normal">Payment charge</dt>
@@ -430,6 +455,15 @@ export class CheckoutPage implements OnInit {
    * confirmation page shows its figure, not this one.
    */
   protected readonly total = computed(() => this.cart.cart().totals.grandTotal + this.surcharge());
+
+  /** Money off the goods, one line each. Free delivery shows on its own row. */
+  protected readonly goodsDiscounts = computed(() =>
+    this.cart.cart().discounts.filter(discount => discount.type !== 'FreeShipping')
+  );
+
+  protected readonly freeDeliveryName = computed(
+    () => this.cart.cart().discounts.find(discount => discount.type === 'FreeShipping')?.name ?? null
+  );
 
   /**
    * What stops the order being placed, if anything: a line that cannot be

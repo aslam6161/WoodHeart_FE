@@ -6,7 +6,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { GeneralResponseOf } from '../_models/generalResponse';
 import { Cart, DeliveryZone, EMPTY_CART } from '../_models/cart';
-import { silentFailure } from '../_interceptors/http-context';
+import { handledInline, silentFailure } from '../_interceptors/http-context';
 import { AccountService } from './account.service';
 
 /**
@@ -121,6 +121,34 @@ export class CartService {
   setDeliveryZone(zone: DeliveryZone): Observable<Cart> {
     return this.http
       .put<GeneralResponseOf<Cart>>(`${this.baseUrl}/delivery-zone`, { zone })
+      .pipe(this.applyResponse());
+  }
+
+  /**
+   * Puts a coupon code on the basket.
+   *
+   * <b>The API refuses a code that would not do anything</b>, with the reason
+   * — expired, below the minimum, already claimed — rather than storing it and
+   * letting the customer find out at the till. So a failure here is an answer,
+   * not a fault: it is marked as handled inline, and the caller words it
+   * beside the box.
+   *
+   * On success the whole basket comes back repriced, like every other
+   * mutation.
+   */
+  applyCoupon(code: string): Observable<GeneralResponseOf<Cart>> {
+    return this.http
+      .post<GeneralResponseOf<Cart>>(
+        `${this.baseUrl}/coupons`,
+        { code },
+        { context: handledInline() }
+      )
+      .pipe(tap(response => this.replace(response.data ?? EMPTY_CART)));
+  }
+
+  removeCoupon(code: string): Observable<Cart> {
+    return this.http
+      .delete<GeneralResponseOf<Cart>>(`${this.baseUrl}/coupons/${encodeURIComponent(code)}`)
       .pipe(this.applyResponse());
   }
 

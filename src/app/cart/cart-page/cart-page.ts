@@ -6,6 +6,7 @@ import { MediaUrlService } from '../../_services/media-url.service';
 import { SeoService } from '../../_services/seo.service';
 import { CartLine, DeliveryZone, MAX_QUANTITY_PER_LINE } from '../../_models/cart';
 import { TakaPipe } from '../../_pipes/taka.pipe';
+import { CouponBox } from '../coupon-box/coupon-box';
 
 /**
  * The basket page.
@@ -24,7 +25,7 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
  */
 @Component({
   selector: 'app-cart-page',
-  imports: [RouterLink, TakaPipe],
+  imports: [RouterLink, TakaPipe, CouponBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container py-4">
@@ -209,6 +210,10 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                 </div>
               </fieldset>
 
+              <div class="mb-3">
+                <app-coupon-box />
+              </div>
+
               <dl class="row small mb-0">
                 <dt class="col-7 fw-normal">
                   Subtotal ({{ basket.totals.itemCount }}
@@ -216,9 +221,27 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                 </dt>
                 <dd class="col-5 text-end">{{ basket.totals.subtotal | taka }}</dd>
 
-                @if (basket.totals.discountTotal > 0) {
-                  <dt class="col-7 fw-normal">Discount</dt>
-                  <dd class="col-5 text-end">&minus;{{ basket.totals.discountTotal | taka }}</dd>
+                <!-- Named, one line each. A single "&minus;৳2,000" reads as an
+                     error to anyone who was not expecting it; "September sale"
+                     also tells a customer not to go hunting for a better code. -->
+                @for (discount of goodsDiscounts(); track discount.discountId) {
+                  <dt class="col-7 fw-normal text-success">
+                    {{ discount.name }}
+                    @if (discount.code) {
+                      <span class="text-muted">({{ discount.code }})</span>
+                    }
+                  </dt>
+                  <dd class="col-5 text-end text-success">&minus;{{ discount.amount | taka }}</dd>
+                }
+
+                <!-- Belt to those braces: if the API ever reports a discount
+                     total it did not itemise, the customer still sees it
+                     rather than an arithmetic hole. -->
+                @if (goodsDiscounts().length === 0 && basket.totals.discountTotal > 0) {
+                  <dt class="col-7 fw-normal text-success">Discount</dt>
+                  <dd class="col-5 text-end text-success">
+                    &minus;{{ basket.totals.discountTotal | taka }}
+                  </dd>
                 }
 
                 <dt class="col-7 fw-normal">Delivery</dt>
@@ -231,6 +254,10 @@ import { TakaPipe } from '../../_pipes/taka.pipe';
                     {{ basket.totals.deliveryFee | taka }}
                   }
                 </dd>
+
+                @if (freeDeliveryName(); as name) {
+                  <dd class="col-12 text-success mb-0">{{ name }}</dd>
+                }
 
                 @if (basket.totals.deliveryOverridden) {
                   <dd class="col-12 text-muted mb-0">Delivery adjusted by WoodHeart.</dd>
@@ -327,6 +354,22 @@ export class CartPage {
 
   protected readonly canCheckout = computed(
     () => !this.cart.cart().hasUnavailableLines && this.shortLines().length === 0
+  );
+
+  /** Money off the goods, one line each. Free delivery is shown on its own row. */
+  protected readonly goodsDiscounts = computed(() =>
+    this.cart.cart().discounts.filter(discount => discount.type !== 'FreeShipping')
+  );
+
+  /**
+   * The name of the discount that waived delivery, if one did.
+   *
+   * Worth saying: "Free" beside Delivery with no explanation reads as a rule
+   * the shop applied, and the customer never learns that the code they typed
+   * is what did it.
+   */
+  protected readonly freeDeliveryName = computed(
+    () => this.cart.cart().discounts.find(discount => discount.type === 'FreeShipping')?.name ?? null
   );
 
   constructor() {

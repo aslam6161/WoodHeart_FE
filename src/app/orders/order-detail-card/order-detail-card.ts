@@ -7,6 +7,7 @@ import {
   ORDER_STATUS_EXPLANATIONS,
   ORDER_STATUS_LABELS,
   OrderDetail,
+  OrderDiscount,
   OrderLine,
   OrderStatus,
   PAYMENT_STATUS_LABELS
@@ -117,7 +118,20 @@ import {
       <dt class="col-8 col-md-9 fw-normal text-md-end">Subtotal</dt>
       <dd class="col-4 col-md-3 text-end">{{ detail.totals.subtotal | taka }}</dd>
 
-      @if (detail.totals.discountTotal > 0) {
+      <!-- Named, as they were at placement. An invoice whose total is 5,000
+           less than its own lines, with nothing saying why, is the kind of
+           thing a customer telephones about. -->
+      @for (discount of goodsDiscounts(detail); track $index) {
+        <dt class="col-8 col-md-9 fw-normal text-md-end text-success">
+          {{ discount.name }}
+          @if (discount.code) {
+            <span class="text-muted">({{ discount.code }})</span>
+          }
+        </dt>
+        <dd class="col-4 col-md-3 text-end text-success">&minus;{{ discount.amount | taka }}</dd>
+      }
+
+      @if (goodsDiscounts(detail).length === 0 && detail.totals.discountTotal > 0) {
         <dt class="col-8 col-md-9 fw-normal text-md-end">Discount</dt>
         <dd class="col-4 col-md-3 text-end">&minus;{{ detail.totals.discountTotal | taka }}</dd>
       }
@@ -130,6 +144,10 @@ import {
           {{ detail.totals.deliveryFee | taka }}
         }
       </dd>
+
+      @if (freeDeliveryName(detail); as name) {
+        <dd class="col-12 text-md-end text-success mb-0">{{ name }}</dd>
+      }
 
       @if (detail.totals.paymentSurcharge > 0) {
         <dt class="col-8 col-md-9 fw-normal text-md-end">Payment charge</dt>
@@ -198,6 +216,21 @@ export class OrderDetailCard {
   readonly showStatus = input(true);
 
   readonly showTimeline = input(true);
+
+  /**
+   * Money off the goods. Free delivery is named under the delivery line
+   * instead, so a waived charge is not also shown as a deduction from a
+   * subtotal it never came out of.
+   */
+  protected goodsDiscounts(detail: OrderDetail): OrderDiscount[] {
+    return (detail.discounts ?? []).filter(discount => discount.type !== 'FreeShipping');
+  }
+
+  protected freeDeliveryName(detail: OrderDetail): string | null {
+    return (
+      (detail.discounts ?? []).find(discount => discount.type === 'FreeShipping')?.name ?? null
+    );
+  }
 
   protected statusLabel(status: OrderStatus): string {
     return ORDER_STATUS_LABELS[status] ?? status;
