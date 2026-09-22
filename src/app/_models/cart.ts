@@ -8,6 +8,8 @@
  * delivery rate card.
  */
 
+import type { DiscountType } from './promotions';
+
 /** Where the goods are going. Decides which of a product's two delivery charges applies. */
 export type DeliveryZone = 'InsideDhaka' | 'OutsideDhaka';
 
@@ -27,6 +29,47 @@ export interface Cart {
 
   /** True when something in the basket can no longer be bought. */
   hasUnavailableLines: boolean;
+
+  /**
+   * What came off, named. Automatic promotions and coupons alike.
+   *
+   * Named rather than summed into one figure: "&minus;৳2,000" on its own reads
+   * as an error to anyone who was not expecting it, and a customer who can see
+   * "September sale" knows not to go hunting for a better code.
+   */
+  discounts: CartDiscount[];
+
+  /** The codes on this basket, and whether each is actually doing anything. */
+  coupons: CartCoupon[];
+
+  /** True when a discount takes the delivery charge off. */
+  freeShipping: boolean;
+}
+
+/** One discount that applied to the basket. */
+export interface CartDiscount {
+  discountId: number;
+  name: string;
+  /** Null for an automatic promotion — nothing was typed. */
+  code?: string | null;
+  type: DiscountType;
+  /** What it took off. For free delivery, the charge that was waived. */
+  amount: number;
+}
+
+/**
+ * A coupon code on the basket.
+ *
+ * A code can stop applying after it was accepted — the customer takes out the
+ * sofa that qualified them, or the limit is reached while they hesitate — so
+ * the basket carries both the code and where it stands rather than silently
+ * dropping it.
+ */
+export interface CartCoupon {
+  code: string;
+  isApplied: boolean;
+  /** A promotions error code when it is not applying. Absent when it is. */
+  reason?: string | null;
 }
 
 export interface CartLine {
@@ -117,7 +160,10 @@ export const EMPTY_CART: Cart = {
     pricesIncludeVat: true
   },
   hasPriceChanges: false,
-  hasUnavailableLines: false
+  hasUnavailableLines: false,
+  discounts: [],
+  coupons: [],
+  freeShipping: false
 };
 
 /**

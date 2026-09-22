@@ -113,7 +113,43 @@ export const adminRoutes: Routes = [
     loadComponent: () =>
       import('./inventory/admin-stock-detail').then(m => m.AdminStockDetail),
     title: 'Stock — WoodHeart Admin'
+  },
+
+  {
+    // Every staff role reads: somebody answering the phone needs to be able
+    // to say whether a code is still running. Writing is narrower, and the
+    // screens hide the controls themselves.
+    path: 'discounts',
+    loadComponent: () =>
+      import('./discounts/admin-discount-list').then(m => m.AdminDiscountList),
+    title: 'Discounts — WoodHeart Admin'
+  },
+
+  // Before ':id', or 'new' binds as an id and the create form tries to load a
+  // discount called "new" — the same trap as products above.
+  {
+    path: 'discounts/new',
+    loadComponent: () =>
+      import('./discounts/admin-discount-form').then(m => m.AdminDiscountForm),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'New discount — WoodHeart Admin'
+  },
+
+  {
+    // Longer path first, for the same reason.
+    path: 'discounts/:id/usage',
+    loadComponent: () =>
+      import('./discounts/admin-discount-usage').then(m => m.AdminDiscountUsage),
+    title: 'Discount usage — WoodHeart Admin'
+  },
+
+  {
+    path: 'discounts/:id',
+    loadComponent: () =>
+      import('./discounts/admin-discount-form').then(m => m.AdminDiscountForm),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Discount — WoodHeart Admin'
   }
 
-  // Phase 3 onward: discounts, consultations, customers.
+  // Phase 4 onward: consultations, customers.
 ];

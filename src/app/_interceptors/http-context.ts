@@ -34,3 +34,19 @@ export const SILENT_FAILURE = new HttpContextToken<boolean>(() => false);
 export function silentFailure(): HttpContext {
   return new HttpContext().set(SILENT_FAILURE, true);
 }
+
+/**
+ * Marks a request whose refusal is part of the screen rather than a fault.
+ *
+ * Typing a coupon code that has expired is not an error: it is the answer to
+ * a question the customer asked, and it belongs beside the box they typed it
+ * in — not in a red toast, and certainly not at `/not-found`, which is where
+ * the interceptor's default would send somebody for mistyping a code (the API
+ * answers a missing code with a 404, correctly).
+ *
+ * So this suppresses both behaviours and leaves the wording to the caller,
+ * which has the specific reason the engine gave.
+ */
+export function handledInline(): HttpContext {
+  return new HttpContext().set(SILENT_FAILURE, true).set(HANDLES_NOT_FOUND, true);
+}

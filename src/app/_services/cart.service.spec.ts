@@ -185,6 +185,61 @@ describe('CartService', () => {
       expect(service.cart().deliveryZone).toBe('OutsideDhaka');
     });
 
+    it('sends a coupon code and replaces the basket with what came back', () => {
+      service.applyCoupon('eid25').subscribe();
+
+      const request = http.expectOne(`${base}/coupons`);
+
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ code: 'eid25' });
+
+      request.flush({
+        isSuccess: true,
+        data: {
+          ...basketWith(1),
+          discounts: [
+            { discountId: 4, name: 'Eid sale', code: 'EID25', type: 'Percentage', amount: 2000 }
+          ],
+          coupons: [{ code: 'EID25', isApplied: true }],
+          totals: { ...EMPTY_CART.totals, itemCount: 1, subtotal: 85_000, discountTotal: 2000 }
+        }
+      });
+
+      expect(service.cart().discounts[0].name).toBe('Eid sale');
+      expect(service.cart().totals.discountTotal).toBe(2000);
+    });
+
+    it('lets a refused code through to the caller rather than swallowing it', async () => {
+      // The refusal is the answer to what the customer asked, and the box
+      // beside the field words it. A toast would be the wrong place and
+      // `/not-found` — where a 404 would otherwise send them — is worse.
+      let failure: unknown;
+
+      service.applyCoupon('EXPIRED').subscribe({ error: error => (failure = error) });
+
+      http
+        .expectOne(`${base}/coupons`)
+        .flush(
+          { isSuccess: false, errorCode: 'promotions.coupon_expired', message: 'Expired.' },
+          { status: 400, statusText: 'Bad Request' }
+        );
+
+      expect(failure).toBeDefined();
+    });
+
+    it('escapes a code on its way into the URL', () => {
+      // Codes are letters, digits, dots, dashes and underscores — but a
+      // customer can type anything into the box, and an unescaped one would
+      // be a request to a different path.
+      service.removeCoupon('EID/25').subscribe();
+
+      const request = http.expectOne(`${base}/coupons/EID%2F25`);
+
+      expect(request.request.method).toBe('DELETE');
+
+      request.flush({ isSuccess: true, data: basketWith(1) });
+    });
+
     it('forgets the basket locally without asking the API', () => {
       // After an order is placed the API has already retired the cart; a
       // header still showing "2" is what makes a customer place it twice.
