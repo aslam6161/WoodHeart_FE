@@ -123,8 +123,27 @@ export interface OrderDetail {
   currency: string;
   lines: OrderLine[];
   totals: OrderTotals;
+
+  /**
+   * What came off, named — as it was at placement.
+   *
+   * Frozen on the order rather than read through the discount, so an invoice
+   * reprinted next year still says what was actually given even after the
+   * campaign has been renamed or archived.
+   */
+  discounts: OrderDiscount[];
+
   timeline: OrderTimelineEntry[];
   canCancel: boolean;
+}
+
+/** One discount as it applied to an order. */
+export interface OrderDiscount {
+  name: string;
+  /** The code the customer typed. Null for an automatic promotion. */
+  code?: string | null;
+  type: import('./promotions').DiscountType;
+  amount: number;
 }
 
 export interface OrderLine {
