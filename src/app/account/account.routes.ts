@@ -24,5 +24,11 @@ export const accountRoutes: Routes = [
     path: 'bookings',
     loadComponent: () => import('./booking-history/booking-history').then(m => m.BookingHistory),
     title: 'Your consultations'
+  },
+  {
+    path: 'quotations',
+    loadComponent: () =>
+      import('./quotation-history/quotation-history').then(m => m.QuotationHistory),
+    title: 'Your quotations'
   }
 ];

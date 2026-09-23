@@ -250,6 +250,7 @@ function booking(status: Booking['status'] = 'Requested'): Booking {
     roomTypes: [],
     fee: 2000,
     timeline: [],
-    canCancel: status === 'Requested'
+    canCancel: status === 'Requested',
+    allowedStatusTransitions: status === 'Requested' ? ['Confirmed', 'Cancelled'] : []
   };
 }
