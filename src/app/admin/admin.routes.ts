@@ -27,6 +27,68 @@ export const adminRoutes: Routes = [
     title: 'Products — WoodHeart Admin'
   },
 
+  // The diary first: it is what the panel is opened for. The two screens that
+  // write the schedule sit under it, and both are declared before any ':id'
+  // for the usual reason.
+  {
+    path: 'consultations',
+    loadComponent: () =>
+      import('./consultations/admin-booking-board').then(m => m.AdminBookingBoard),
+    title: 'Consultations — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/services',
+    loadComponent: () =>
+      import('./consultations/admin-consultation-services').then(m => m.AdminConsultationServices),
+    title: 'What we offer — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/services/new',
+    loadComponent: () =>
+      import('./consultations/admin-consultation-service-form').then(
+        m => m.AdminConsultationServiceForm
+      ),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Add a consultation — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/services/:id',
+    loadComponent: () =>
+      import('./consultations/admin-consultation-service-form').then(
+        m => m.AdminConsultationServiceForm
+      ),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Edit consultation — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/consultants',
+    loadComponent: () =>
+      import('./consultations/admin-consultants').then(m => m.AdminConsultants),
+    title: 'Designers — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/consultants/new',
+    loadComponent: () =>
+      import('./consultations/admin-consultant-form').then(m => m.AdminConsultantForm),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Add a designer — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/consultants/:id',
+    loadComponent: () =>
+      import('./consultations/admin-consultant-form').then(m => m.AdminConsultantForm),
+    // A week of typed hours is exactly the kind of work leaving by accident
+    // costs.
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Designer — WoodHeart Admin'
+  },
+  {
+    path: 'consultations/bookings/:bookingNumber',
+    loadComponent: () =>
+      import('./consultations/admin-booking-detail').then(m => m.AdminBookingDetail),
+    title: 'Booking — WoodHeart Admin'
+  },
+
   // Before ':id'. Declared the other way round, `new` matches the parameter.
   {
     path: 'products/new',
