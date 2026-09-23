@@ -93,6 +93,23 @@ export const routes: Routes = [
           import('./consultation/booking-wizard/booking-wizard').then(m => m.BookingWizard)
       },
 
+      // What the consultation was for. Open to a guest for the same reason
+      // the booking is: most people quoted for a flat have no account, and
+      // asking them to make one before they can say yes to a price is how a
+      // sale is lost. 'find' before ':quotationNumber', or it is read as one.
+      {
+        path: 'quotation/find',
+        loadComponent: () =>
+          import('./quotation/quotation-page/quotation-page').then(m => m.QuotationPage),
+        title: 'Find your quotation'
+      },
+      {
+        path: 'quotation/:quotationNumber',
+        loadComponent: () =>
+          import('./quotation/quotation-page/quotation-page').then(m => m.QuotationPage),
+        title: 'Your quotation'
+      },
+
       // Anyone: a guest tracking their order by number and phone.
       {
         path: 'track',

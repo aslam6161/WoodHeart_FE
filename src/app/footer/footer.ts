@@ -39,6 +39,14 @@ import { RouterLink } from '@angular/router';
                 <a class="link-secondary text-decoration-none" routerLink="/track">Track your order</a>
               </li>
               <li>
+                <!-- A quotation is read weeks after it was sent, usually from
+                     an SMS somebody has since scrolled past. This is the way
+                     back to it without an account. -->
+                <a class="link-secondary text-decoration-none" routerLink="/quotation/find">
+                  Find your quotation
+                </a>
+              </li>
+              <li>
                 <a class="link-secondary text-decoration-none" routerLink="/contact">Contact us</a>
               </li>
             </ul>

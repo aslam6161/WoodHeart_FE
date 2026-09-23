@@ -67,6 +67,7 @@ export class AdminSidebar {
     { label: 'Stock', path: '/admin/inventory/stock' },
     { label: 'Discounts', path: '/admin/discounts' },
     { label: 'Consultations', path: '/admin/consultations' },
+    { label: 'Quotations', path: '/admin/quotations' },
     { label: 'Settings', path: '/admin/settings', requiresAdmin: true }
 
     // Everything below arrives with the phase that builds it. Listing a link
