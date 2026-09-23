@@ -63,6 +63,36 @@ export const routes: Routes = [
         title: 'Order placed'
       },
 
+      // The second revenue line. Open to a guest throughout: somebody who
+      // wants a designer to look at their flat should not have to make an
+      // account first.
+      {
+        path: 'consultation',
+        loadComponent: () =>
+          import('./consultation/consultation-list/consultation-list').then(m => m.ConsultationList),
+        title: 'Talk to a designer'
+      },
+
+      // Both before ':slug', or "find" and "bookings" would be read as the
+      // slugs of consultations that do not exist.
+      {
+        path: 'consultation/find',
+        loadComponent: () =>
+          import('./consultation/booking-page/booking-page').then(m => m.BookingPage),
+        title: 'Find your booking'
+      },
+      {
+        path: 'consultation/bookings/:bookingNumber',
+        loadComponent: () =>
+          import('./consultation/booking-page/booking-page').then(m => m.BookingPage),
+        title: 'Your consultation'
+      },
+      {
+        path: 'consultation/:slug',
+        loadComponent: () =>
+          import('./consultation/booking-wizard/booking-wizard').then(m => m.BookingWizard)
+      },
+
       // Anyone: a guest tracking their order by number and phone.
       {
         path: 'track',
