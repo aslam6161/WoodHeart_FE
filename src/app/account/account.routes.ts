@@ -19,5 +19,10 @@ export const accountRoutes: Routes = [
     path: 'orders/:orderNumber',
     loadComponent: () => import('./order-page/order-page').then(m => m.OrderPage),
     title: 'Your order'
+  },
+  {
+    path: 'bookings',
+    loadComponent: () => import('./booking-history/booking-history').then(m => m.BookingHistory),
+    title: 'Your consultations'
   }
 ];
