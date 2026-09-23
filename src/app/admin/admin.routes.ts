@@ -82,6 +82,38 @@ export const adminRoutes: Routes = [
     canDeactivate: [preventUnsavedChangesGuard],
     title: 'Designer — WoodHeart Admin'
   },
+  // Quotations: what the consultation was for. 'new' and ':number/edit' are
+  // both declared before ':quotationNumber' for the usual reason — otherwise
+  // the detail page tries to load a quotation called "new".
+  {
+    path: 'quotations',
+    loadComponent: () =>
+      import('./quotations/admin-quotation-list').then(m => m.AdminQuotationList),
+    title: 'Quotations — WoodHeart Admin'
+  },
+  {
+    path: 'quotations/new',
+    loadComponent: () =>
+      import('./quotations/admin-quotation-form').then(m => m.AdminQuotationForm),
+    // Lines typed by hand after a site visit: exactly the kind of work that
+    // leaving by accident costs.
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Write a quotation — WoodHeart Admin'
+  },
+  {
+    path: 'quotations/:quotationNumber/edit',
+    loadComponent: () =>
+      import('./quotations/admin-quotation-form').then(m => m.AdminQuotationForm),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Edit quotation — WoodHeart Admin'
+  },
+  {
+    path: 'quotations/:quotationNumber',
+    loadComponent: () =>
+      import('./quotations/admin-quotation-detail').then(m => m.AdminQuotationDetail),
+    title: 'Quotation — WoodHeart Admin'
+  },
+
   {
     path: 'consultations/bookings/:bookingNumber',
     loadComponent: () =>
