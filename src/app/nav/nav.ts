@@ -43,6 +43,9 @@ import { CartService } from '../_services/cart.service';
 
             @if (account.isAuthenticated()) {
               <li class="nav-item">
+                <a class="nav-link" routerLink="/account/bookings">Bookings</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" routerLink="/account">
                   {{ account.user()?.fullName ?? 'Account' }}
                 </a>
