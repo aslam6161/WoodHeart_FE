@@ -153,6 +153,15 @@ export interface Booking {
   timeline: BookingTimelineEntry[];
   /** Whether the customer may still call it off themselves. */
   canCancel: boolean;
+
+  /**
+   * Every status legal from this one, straight from the API’s own table.
+   *
+   * Sent rather than reimplemented here, exactly as an order’s are: a second
+   * copy of the graph in TypeScript drifts, and the drift is a button that
+   * renders, is pressed, and comes back 409.
+   */
+  allowedStatusTransitions: BookingStatus[];
 }
 
 export interface BookingTimelineEntry {
