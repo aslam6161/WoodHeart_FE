@@ -183,6 +183,26 @@ export const adminRoutes: Routes = [
   },
 
   {
+    // Admin only, beside Settings and for the same reason: this decides
+    // whether money can be taken at all, and it holds merchant credentials.
+    // 'new' is absent on purpose — a method is half a configuration row and
+    // half a class, and one invented here would reach no customer.
+    path: 'payment-methods',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./payments/admin-payment-method-list').then(m => m.AdminPaymentMethodList),
+    title: 'Payment methods — WoodHeart Admin'
+  },
+  {
+    path: 'payment-methods/:code',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./payments/admin-payment-method-form').then(m => m.AdminPaymentMethodForm),
+    canDeactivate: [preventUnsavedChangesGuard],
+    title: 'Payment method — WoodHeart Admin'
+  },
+
+  {
     // Admin only, within a panel that is otherwise open to all staff: this
     // is the VAT rate and the name on the invoice. The API enforces the same
     // policy; the guard just saves a manager a 403.
