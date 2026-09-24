@@ -41,6 +41,7 @@ export const SETTING_LABELS: Record<string, string> = {
   'delivery.free_threshold': 'Free delivery on orders from (৳)',
   'orders.number_prefix': 'Order number prefix',
   'orders.unpaid_expiry_minutes': 'Cancel an unpaid online order after (minutes)',
+  'carts.recovery_after_hours': 'Remind a customer about a basket after (hours)',
   'inventory.low_stock_threshold': 'Low-stock threshold (units)',
   'inventory.low_stock_digest': 'Send a morning message listing low stock'
 };
