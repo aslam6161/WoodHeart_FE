@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
+﻿import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountService } from '../../../_services/account.service';
 
@@ -68,6 +68,7 @@ export class AdminSidebar {
     { label: 'Discounts', path: '/admin/discounts' },
     { label: 'Consultations', path: '/admin/consultations' },
     { label: 'Quotations', path: '/admin/quotations' },
+    { label: 'Notifications', path: '/admin/notifications' },
     { label: 'Payments', path: '/admin/payment-methods', requiresAdmin: true },
     { label: 'Settings', path: '/admin/settings', requiresAdmin: true }
 
