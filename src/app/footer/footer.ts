@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FeaturesService } from '../_services/features.service';
 
 @Component({
   selector: 'app-footer',
@@ -24,11 +25,13 @@ import { RouterLink } from '@angular/router';
                   All products
                 </a>
               </li>
-              <li>
-                <a class="link-secondary text-decoration-none" routerLink="/consultation">
-                  Consultation
-                </a>
-              </li>
+              @if (features.features().consultations) {
+                <li>
+                  <a class="link-secondary text-decoration-none" routerLink="/consultation">
+                    Consultation
+                  </a>
+                </li>
+              }
             </ul>
           </div>
 
@@ -62,4 +65,8 @@ import { RouterLink } from '@angular/router';
 })
 export class Footer {
   protected readonly year = new Date().getFullYear();
+
+  // The header hides the same link. Leaving it here would mean a customer who
+  // scrolled past the top of the page found the one door still open.
+  protected readonly features = inject(FeaturesService);
 }

@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -30,10 +30,19 @@ export class ConsultationApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}consultations`;
 
-  /** Everything the shop sells an hour of. */
+  /**
+   * Everything the shop sells an hour of.
+   *
+   * `handledInline()` because the shop being closed to consultations is not an
+   * error: the page says so itself, in place and in the shop's own words, and a
+   * red toast on top of that tells the same customer the same thing twice — the
+   * second time as though something had broken.
+   */
   getServices(): Observable<ConsultationServiceDto[]> {
     return this.http
-      .get<GeneralResponseOf<ConsultationServiceDto[]>>(`${this.baseUrl}/services`)
+      .get<GeneralResponseOf<ConsultationServiceDto[]>>(
+        `${this.baseUrl}/services`,
+        { context: handledInline() })
       .pipe(map(response => response.data ?? []));
   }
 

@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+﻿import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountService } from '../_services/account.service';
 import { CartService } from '../_services/cart.service';
+import { FeaturesService } from '../_services/features.service';
 
 /** The storefront header. */
 @Component({
@@ -27,11 +28,13 @@ import { CartService } from '../_services/cart.service';
             <li class="nav-item">
               <a class="nav-link" routerLink="/products" routerLinkActive="active">Shop</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" routerLink="/consultation" routerLinkActive="active">
-                Consultation
-              </a>
-            </li>
+            @if (features.features().consultations) {
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/consultation" routerLinkActive="active">
+                  Consultation
+                </a>
+              </li>
+            }
           </ul>
 
           <ul class="navbar-nav">
@@ -87,6 +90,7 @@ import { CartService } from '../_services/cart.service';
 export class Nav {
   protected readonly account = inject(AccountService);
   protected readonly cart = inject(CartService);
+  protected readonly features = inject(FeaturesService);
   private readonly router = inject(Router);
 
   protected readonly menuOpen = signal(false);
@@ -96,6 +100,11 @@ export class Nav {
     // the header is where it is fetched. A no-op on the server and after the
     // first call; see CartService.
     this.cart.ensureLoaded();
+
+    // Whether the shop is taking consultations decides whether that link is
+    // drawn at all. Read here because the header is on every page, and a no-op
+    // after the first call.
+    this.features.ensureLoaded();
   }
 
   protected toggleMenu(): void {
