@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Runtime settings, mirroring `SettingsDtos.cs` on the backend.
  *
  * Values are strings whatever their type; the API parses them against the
@@ -40,7 +40,9 @@ export const SETTING_LABELS: Record<string, string> = {
   'delivery.charge_outside_dhaka': 'Default delivery charge outside Dhaka (৳)',
   'delivery.free_threshold': 'Free delivery on orders from (৳)',
   'orders.number_prefix': 'Order number prefix',
-  'inventory.low_stock_threshold': 'Low-stock threshold (units)'
+  'orders.unpaid_expiry_minutes': 'Cancel an unpaid online order after (minutes)',
+  'inventory.low_stock_threshold': 'Low-stock threshold (units)',
+  'inventory.low_stock_digest': 'Send a morning message listing low stock'
 };
 
 /** Settings that want a bigger box than one line. */
