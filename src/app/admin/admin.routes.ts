@@ -1,5 +1,5 @@
-import { Routes } from '@angular/router';
-import { adminGuard, preventUnsavedChangesGuard } from '../_guards/auth.guard';
+﻿import { Routes } from '@angular/router';
+import { adminGuard, preventUnsavedChangesGuard, staffGuard } from '../_guards/auth.guard';
 
 /**
  * The admin panel's routes.
@@ -200,6 +200,39 @@ export const adminRoutes: Routes = [
       import('./payments/admin-payment-method-form').then(m => m.AdminPaymentMethodForm),
     canDeactivate: [preventUnsavedChangesGuard],
     title: 'Payment method — WoodHeart Admin'
+  },
+
+  {
+    // Staff, not admin. The person asked "I never got a text about my order"
+    // is whoever answered the telephone, and a screen they cannot open is a
+    // question they cannot answer. The API allows the same, and refuses only
+    // the switches — which the screens hide rather than offer and then 403.
+    path: 'notifications',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./notifications/admin-notification-template-list').then(
+        m => m.AdminNotificationTemplateList
+      ),
+    title: 'Notifications — WoodHeart Admin'
+  },
+  {
+    // Before ':code', or a template called "messages" is what this resolves to.
+    path: 'notifications/messages',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./notifications/admin-notification-message-list').then(
+        m => m.AdminNotificationMessageList
+      ),
+    title: 'What has been sent — WoodHeart Admin'
+  },
+  {
+    path: 'notifications/templates/:code',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./notifications/admin-notification-template').then(
+        m => m.AdminNotificationTemplate
+      ),
+    title: 'Notification — WoodHeart Admin'
   },
 
   {
