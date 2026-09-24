@@ -1,6 +1,7 @@
-import { HttpClient } from '@angular/common/http';
+﻿import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { map } from 'rxjs';
+import { handledInline } from '../_interceptors/http-context';
 import { GeneralResponseOf } from '../_models/generalResponse';
 import { environment } from '../../environments/environment';
 
@@ -48,7 +49,16 @@ export class FeaturesService {
     this.loaded = true;
 
     this.http
-      .get<GeneralResponseOf<StorefrontFeatures>>(`${this.baseUrl}features`)
+      .get<GeneralResponseOf<StorefrontFeatures>>(
+        `${this.baseUrl}features`,
+
+        // The error handling below is not enough on its own. Without this the
+        // interceptor owns the failure first: a 404 from here — an API too old
+        // to have the endpoint, say — navigates the whole application to
+        // /not-found, and under server rendering that turns every page in the
+        // shop into a 404 answered to Google. The header asking a question
+        // must never be able to decide what page the reader is on.
+        { context: handledInline() })
       .pipe(map(response => response.data))
       .subscribe({
         next: features => {
