@@ -1,4 +1,9 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  afterNextRender,
+  signal
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AdminNavbar } from '../adminComponents/admin-navbar/admin-navbar';
 import { AdminSidebar } from '../adminComponents/admin-sidebar/admin-sidebar';
@@ -49,6 +54,27 @@ import { AdminFooter } from '../adminComponents/admin-footer/admin-footer';
 })
 export class AdminLayout {
   protected readonly sidebarCollapsed = signal(false);
+
+  constructor() {
+    // Poppins is what gives the panel its voice, and it is fetched here rather
+    // than linked in index.html so that a storefront visitor never pays for a
+    // webfont they will never see — on a 4G connection in Dhaka that request
+    // is not free. `afterNextRender` keeps it out of the server render, where
+    // there is no document to append to.
+    afterNextRender(() => {
+      const href =
+        'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap';
+
+      if (document.head.querySelector(`link[href="${href}"]`)) {
+        return;
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    });
+  }
 
   protected toggleSidebar(): void {
     this.sidebarCollapsed.update(collapsed => !collapsed);

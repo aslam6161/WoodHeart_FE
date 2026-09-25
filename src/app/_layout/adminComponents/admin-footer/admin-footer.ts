@@ -4,7 +4,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'app-admin-footer',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <footer class="border-top px-4 py-2">
+    <footer class="px-4 py-3">
       <span class="small text-muted">WoodHeart Admin © {{ year }}</span>
     </footer>
   `
