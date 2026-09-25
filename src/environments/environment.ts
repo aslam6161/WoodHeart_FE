@@ -1,4 +1,4 @@
-export const environment = {
+﻿export const environment = {
   production: false,
 
   /** Trailing slash included, so services concatenate `apiUrl + 'product'`. */
@@ -33,7 +33,7 @@ export const environment = {
    * Empty renders placeholder tiles instead of images, which is what a
    * checkout without Cloudinary credentials should look like.
    */
-  cloudinaryCloudName: 'woodheart-dev',
+  cloudinaryCloudName: 'deqvr9nh',
 
   anonymousIdKey: 'wh_anon',
 
