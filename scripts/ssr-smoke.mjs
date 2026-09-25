@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server-rendering smoke test.
  *
  * WHY THIS EXISTS
@@ -422,9 +422,12 @@ async function main() {
 
       // A video thumbnail is a still from its first frame, not the video.
       check('the video thumbnail is a poster frame', html.includes('/video/upload/so_0,'));
+      // Asserted positively, against the name this script injects. Phrased as
+      // "does not contain the fallback" it passed the day somebody changed the
+      // fallback — the check went on reporting success while testing nothing.
       check(
         'and the cloud name came from the environment, not the bundle',
-        !html.includes('res.cloudinary.com/woodheart-dev/')
+        html.includes('res.cloudinary.com/woodheart-smoke/')
       );
     }
 
