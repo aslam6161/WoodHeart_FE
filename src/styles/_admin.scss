@@ -1,0 +1,359 @@
+﻿// -----------------------------------------------------------------------------
+// The admin panel's own look.
+//
+// Everything here is scoped inside `.wh-admin`, the class on the admin shell.
+// That scoping is the whole design of this file: the storefront keeps its warm
+// walnut identity, which is what a furniture shop's customers should see, and
+// the panel the shop works in all day gets a lighter, denser tool look instead.
+//
+// The palette follows the Dabang dashboard: a cool off-white canvas, white
+// cards with a generous radius and a soft shadow rather than a border, indigo
+// for anything actionable, and deep navy for headings.
+//
+// Tokens are CSS custom properties rather than Sass variables on purpose. They
+// are set once on `.wh-admin` and inherit into every admin component, including
+// the ones with their own scoped `styles:` blocks — a Sass variable could not
+// reach those without importing this file into each of them.
+// -----------------------------------------------------------------------------
+
+.wh-admin {
+  // --- colour ---------------------------------------------------------------
+  --wh-canvas: #f7fafc;
+  --wh-surface: #ffffff;
+  --wh-primary: #5d5fef;
+  --wh-primary-hover: #4a4cd1;
+  --wh-heading: #05004e;
+  --wh-text: #0f3659;
+  --wh-muted: #737791;
+  --wh-line: #edf2f6;
+  --wh-line-strong: #c3d3e2;
+
+  // The four tints used for the counts on the dashboard. Each is paired with a
+  // saturated version for the icon chip that sits on it.
+  --wh-rose: #ffe2e5;
+  --wh-rose-ink: #f64e60;
+  --wh-amber: #fff4de;
+  --wh-amber-ink: #ff8f0d;
+  --wh-mint: #dcfce7;
+  --wh-mint-ink: #0bb783;
+  --wh-lilac: #f3e8ff;
+  --wh-lilac-ink: #884dff;
+
+  // --- shape ----------------------------------------------------------------
+  // Cards are round enough to read as panels rather than boxes; controls stay
+  // tighter so a row of buttons does not look like a row of pills.
+  --wh-card-radius: 1.25rem;
+  --wh-control-radius: 0.5rem;
+  --wh-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 2px 2px 10px rgba(0, 0, 0, 0.09);
+
+  background-color: var(--wh-canvas);
+  color: var(--wh-text);
+
+  // Poppins is what gives the template its voice. It is loaded by the admin
+  // shell at runtime, so a storefront visitor never pays for it; the fallbacks
+  // below are what renders until it arrives, and the Bengali faces are kept so
+  // Bangla product names do not drop to something that mangles conjuncts.
+  font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, 'Noto Sans Bengali',
+    'SolaimanLipi', sans-serif;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--wh-heading);
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--wh-primary);
+  }
+
+  a:hover {
+    color: var(--wh-primary-hover);
+  }
+
+  .text-muted {
+    color: var(--wh-muted) !important;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cards
+  //
+  // Admin screens were built with `border rounded p-3`, so restyling that one
+  // combination lifts every screen at once instead of touching twenty files.
+  // The border is dropped in favour of the shadow: an outline plus a shadow
+  // reads as two edges.
+  // ---------------------------------------------------------------------------
+  .border.rounded,
+  .card {
+    background-color: var(--wh-surface);
+    border: 0 !important;
+    border-radius: var(--wh-card-radius) !important;
+    box-shadow: var(--wh-shadow);
+  }
+
+  // --- controls -------------------------------------------------------------
+  .btn {
+    border-radius: var(--wh-control-radius);
+    font-weight: 500;
+  }
+
+  // `btn-dark` is what the admin screens already use for their primary action,
+  // so it is mapped rather than renamed across every template.
+  .btn-primary,
+  .btn-dark {
+    background-color: var(--wh-primary);
+    border-color: var(--wh-primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover,
+  .btn-dark:hover,
+  .btn-primary:focus,
+  .btn-dark:focus {
+    background-color: var(--wh-primary-hover);
+    border-color: var(--wh-primary-hover);
+  }
+
+  .btn-outline-secondary {
+    color: var(--wh-text);
+    border-color: var(--wh-line-strong);
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--wh-line);
+    border-color: var(--wh-line-strong);
+    color: var(--wh-heading);
+  }
+
+  .btn-link {
+    color: var(--wh-primary);
+    text-decoration: none;
+  }
+
+  .form-control,
+  .form-select {
+    border-radius: var(--wh-control-radius);
+    border-color: var(--wh-line);
+    color: var(--wh-text);
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--wh-primary);
+    box-shadow: 0 0 0 0.2rem rgba(93, 95, 239, 0.15);
+  }
+
+  .form-label {
+    color: var(--wh-heading);
+    font-weight: 500;
+  }
+
+  .form-text {
+    color: var(--wh-muted);
+  }
+
+  // --- tables ---------------------------------------------------------------
+  // Column headings become labels rather than a heavy banded row: uppercase,
+  // small, muted. The data is what should carry weight on these screens.
+  .table {
+    --bs-table-color: var(--wh-text);
+    margin-bottom: 0;
+  }
+
+  .table > thead th {
+    background-color: transparent;
+    border-bottom: 1px solid var(--wh-line);
+    color: var(--wh-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .table > tbody td {
+    border-color: var(--wh-line);
+    vertical-align: middle;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Badges and tabs
+  //
+  // These are where the storefront's walnut survived longest: Bootstrap's
+  // `text-bg-*` and `nav-pills` both resolve against the global `$primary` and
+  // `$secondary`, so a status chip in an order table came out brown inside an
+  // otherwise indigo panel.
+  //
+  // They are also restyled from solid to tinted. A table of twenty saturated
+  // pills is a table you cannot read; a tint with coloured text says the same
+  // thing and lets the row's actual data carry the weight.
+  // ---------------------------------------------------------------------------
+  .badge {
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  .badge.text-bg-primary {
+    background-color: rgba(93, 95, 239, 0.12) !important;
+    color: var(--wh-primary) !important;
+  }
+
+  .badge.text-bg-secondary {
+    background-color: var(--wh-line) !important;
+    color: var(--wh-muted) !important;
+  }
+
+  .badge.text-bg-dark {
+    background-color: rgba(5, 0, 78, 0.08) !important;
+    color: var(--wh-heading) !important;
+  }
+
+  .badge.text-bg-light {
+    background-color: var(--wh-line) !important;
+    color: var(--wh-text) !important;
+  }
+
+  .badge.text-bg-success {
+    background-color: var(--wh-mint) !important;
+    color: var(--wh-mint-ink) !important;
+  }
+
+  .badge.text-bg-warning {
+    background-color: var(--wh-amber) !important;
+    color: var(--wh-amber-ink) !important;
+  }
+
+  .badge.text-bg-danger {
+    background-color: var(--wh-rose) !important;
+    color: var(--wh-rose-ink) !important;
+  }
+
+  .badge.text-bg-info {
+    background-color: #e7f3ff !important;
+    color: #0095ff !important;
+  }
+
+  .nav-link {
+    color: var(--wh-muted);
+  }
+
+  .nav-link:hover {
+    color: var(--wh-heading);
+  }
+
+  .nav-pills .nav-link {
+    border-radius: 999px;
+  }
+
+  .nav-pills .nav-link.active {
+    background-color: var(--wh-primary);
+    color: #fff;
+  }
+
+  // The count chip riding inside an active tab: anything opaque fights the
+  // indigo behind it.
+  .nav-pills .nav-link.active .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #fff !important;
+  }
+
+  .alert {
+    border: 0;
+    border-radius: var(--wh-card-radius);
+  }
+
+  // Bootstrap's pagination is square by default and sits oddly under a rounded
+  // card.
+  .page-link {
+    border-color: var(--wh-line);
+    color: var(--wh-text);
+  }
+
+  .page-item.active .page-link {
+    background-color: var(--wh-primary);
+    border-color: var(--wh-primary);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// The four counts on the dashboard.
+//
+// A tinted panel with a solid icon chip, which is the template's most
+// recognisable element. Kept here rather than in the component because the
+// tokens above are what define them, and a second screen will want them.
+// -----------------------------------------------------------------------------
+.wh-stat {
+  border-radius: var(--wh-card-radius);
+  display: block;
+  padding: 1.25rem;
+  text-decoration: none;
+  transition: transform 0.12s ease;
+}
+
+a.wh-stat:hover {
+  transform: translateY(-2px);
+}
+
+.wh-stat__chip {
+  align-items: center;
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  width: 2.5rem;
+}
+
+.wh-stat__chip svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.wh-stat__value {
+  color: var(--wh-heading);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wh-stat__label {
+  color: var(--wh-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.wh-stat__note {
+  color: var(--wh-muted);
+  font-size: 0.75rem;
+}
+
+.wh-stat--rose {
+  background-color: var(--wh-rose);
+}
+.wh-stat--rose .wh-stat__chip {
+  background-color: var(--wh-rose-ink);
+}
+
+.wh-stat--amber {
+  background-color: var(--wh-amber);
+}
+.wh-stat--amber .wh-stat__chip {
+  background-color: var(--wh-amber-ink);
+}
+
+.wh-stat--mint {
+  background-color: var(--wh-mint);
+}
+.wh-stat--mint .wh-stat__chip {
+  background-color: var(--wh-mint-ink);
+}
+
+.wh-stat--lilac {
+  background-color: var(--wh-lilac);
+}
+.wh-stat--lilac .wh-stat__chip {
+  background-color: var(--wh-lilac-ink);
+}

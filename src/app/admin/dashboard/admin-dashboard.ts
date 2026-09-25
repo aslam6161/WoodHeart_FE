@@ -26,36 +26,82 @@ import { StockLevel } from '../../_models/inventory';
     <h1 class="h4 mb-1">Welcome{{ name() ? ', ' + name() : '' }}</h1>
     <p class="text-muted small mb-4">The catalogue at a glance.</p>
 
-    <div class="row g-3 mb-4">
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="border rounded p-3 h-100">
-          <div class="text-uppercase text-muted small">Live products</div>
-          <div class="fs-3">{{ liveCount() ?? '—' }}</div>
-          <a class="small text-decoration-none" routerLink="/admin/products">Open the catalogue</a>
-        </div>
-      </div>
+    <div class="border rounded p-3 p-lg-4 mb-4">
+      <h2 class="h6 mb-3">At a glance</h2>
 
-      <div class="col-12 col-sm-6 col-lg-3">
-        <div class="border rounded p-3 h-100">
-          <div class="text-uppercase text-muted small">Drafts</div>
-          <div class="fs-3">{{ draftCount() ?? '—' }}</div>
-          <!-- A draft is invisible to customers. That is the point of the
-               status, and also the most common "why can nobody see this?". -->
-          <span class="small text-muted">Not visible to customers</span>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-lg-3">
+          <a class="wh-stat wh-stat--lilac h-100" routerLink="/admin/products">
+            <span class="wh-stat__chip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2l9 5v10l-9 5-9-5V7l9-5zm0 2.3L5.2 8 12 11.7 18.8 8 12 4.3z" />
+              </svg>
+            </span>
+            <span class="wh-stat__value d-block">{{ liveCount() ?? '—' }}</span>
+            <span class="wh-stat__label d-block">Live products</span>
+            <span class="wh-stat__note">Open the catalogue</span>
+          </a>
         </div>
-      </div>
 
-      <div class="col-12 col-sm-6 col-lg-6">
-        <div class="border rounded p-3 h-100">
-          <div class="text-uppercase text-muted small">Low stock</div>
-          <div class="fs-3" [class.text-danger]="lowStock().length > 0">
-            {{ lowStockCount() ?? '—' }}
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="wh-stat wh-stat--amber h-100">
+            <span class="wh-stat__chip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 2h8l4 4v16H6V2zm7 1.6V7h3.4L13 3.6z" />
+              </svg>
+            </span>
+            <span class="wh-stat__value d-block">{{ draftCount() ?? '—' }}</span>
+            <span class="wh-stat__label d-block">Drafts</span>
+            <!-- A draft is invisible to customers. That is the point of the
+                 status, and also the most common "why can nobody see this?". -->
+            <span class="wh-stat__note">Not visible to customers</span>
           </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+          <a
+            class="wh-stat wh-stat--rose h-100"
+            routerLink="/admin/inventory/stock"
+            [queryParams]="{ low: 'true' }">
+            <span class="wh-stat__chip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16v4H4V5zm0 5.5h16v4H4v-4zM4 16h16v4H4v-4z" />
+              </svg>
+            </span>
+            <span class="wh-stat__value d-block">{{ lowStockCount() ?? '—' }}</span>
+            <span class="wh-stat__label d-block">Low stock</span>
+            <span class="wh-stat__note">
+              {{ lowStockCount() === 0 ? 'Nothing needs reordering' : 'At or below reorder level' }}
+            </span>
+          </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="wh-stat wh-stat--mint h-100">
+            <span class="wh-stat__chip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16v14H4V5zm2.5 11.5h11l-3.5-4.5-2.5 3-2-2.2-3 3.7zM9 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+              </svg>
+            </span>
+            <span class="wh-stat__value d-block">{{ missingPhotos().length }}</span>
+            <span class="wh-stat__label d-block">No photograph</span>
+            <span class="wh-stat__note">
+              {{ missingPhotos().length === 0 ? 'Every live product has one' : 'Blank tile in every listing' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="border rounded p-3 p-lg-4 h-100">
+          <h2 class="h6 mb-3">Needs reordering</h2>
 
           @if (lowStock().length > 0) {
             <div class="small">
               @for (line of lowStock().slice(0, 4); track line.variantId) {
-                <a class="d-block text-decoration-none"
+                <a class="d-block text-decoration-none mb-1"
                    [routerLink]="['/admin/inventory/stock', line.variantId]">
                   {{ line.productName }} · {{ line.variantName }}
                   <span class="text-muted">({{ line.available }} left)</span>
@@ -73,17 +119,14 @@ import { StockLevel } from '../../_models/inventory';
         </div>
       </div>
 
-      <div class="col-12 col-sm-6 col-lg-6">
-        <div class="border rounded p-3 h-100">
-          <div class="text-uppercase text-muted small">Live products with no photograph</div>
-          <div class="fs-3" [class.text-danger]="missingPhotos().length > 0">
-            {{ missingPhotos().length }}
-          </div>
+      <div class="col-12 col-lg-6">
+        <div class="border rounded p-3 p-lg-4 h-100">
+          <h2 class="h6 mb-3">Live products with no photograph</h2>
 
           @if (missingPhotos().length > 0) {
             <div class="small">
               @for (product of missingPhotos().slice(0, 4); track product.id) {
-                <a class="d-block text-decoration-none"
+                <a class="d-block text-decoration-none mb-1"
                    [routerLink]="['/admin/products', product.id, 'media']">
                   {{ product.nameEn }}
                 </a>
@@ -106,8 +149,8 @@ import { StockLevel } from '../../_models/inventory';
       </div>
     }
 
-    <div class="border rounded p-3">
-      <h2 class="h6 text-uppercase text-muted mb-3">Get started</h2>
+    <div class="border rounded p-3 p-lg-4">
+      <h2 class="h6 mb-3">Get started</h2>
       <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-dark btn-sm" routerLink="/admin/products/new">Add a product</a>
         <a class="btn btn-outline-secondary btn-sm" routerLink="/admin/categories">Categories</a>

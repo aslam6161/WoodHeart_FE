@@ -1,4 +1,4 @@
-// -----------------------------------------------------------------------------
+﻿// -----------------------------------------------------------------------------
 // WoodHeart global styles.
 //
 // Bootstrap is imported through SCSS rather than linked in angular.json, so the
@@ -35,6 +35,10 @@ $font-family-sans-serif:
   $border-radius: $border-radius,
   $font-family-sans-serif: $font-family-sans-serif
 );
+
+// The admin panel's own palette, scoped entirely inside `.wh-admin`. Loaded
+// after Bootstrap so its rules win without needing `!important` on every line.
+@use './styles/admin';
 
 html,
 body {
