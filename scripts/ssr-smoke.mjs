@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server-rendering smoke test.
  *
  * WHY THIS EXISTS
@@ -356,7 +356,17 @@ async function main() {
       // is in the first response, not fetched after hydration.
       check('the product is in the served HTML', html.includes('Segun King Bed'));
       check('the price is formatted as taka', html.includes('৳68,500'));
-      check('the category tree rendered', html.includes('Bedroom'));
+      // The room grid is gone, and stays gone: its counts came from the parent
+      // categories, where no product lives, so every room read "0 products".
+      check('the room grid is not back', !html.includes('Shop by room'));
+
+      // The counts have to survive hydration, and they travel in a header.
+      // The transfer cache replays the server's responses without their
+      // headers unless one is named, and the home page's scroll and every
+      // pager in the app read `X-Pagination` — so when it is dropped a
+      // server-rendered listing quietly believes it is the whole catalogue.
+      check('the paging header survives into the transfer state', html.includes('X-Pagination'));
+      check('and this page of one has nothing more to show', !html.includes('Show more pieces'));
 
       // The card is the only place most visitors ever see a product, and its
       // image is most of the page weight. If the transformation stopped being
