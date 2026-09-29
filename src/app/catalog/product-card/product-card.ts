@@ -60,7 +60,7 @@ import { MediaUrlService } from '../../_services/media-url.service';
             @if (product().variantCount > 1) {
               <span class="small text-muted">from </span>
             }
-            <span class="fw-semibold">{{ product().fromPrice | taka }}</span>
+            <span class="wh-price">{{ product().fromPrice | taka }}</span>
 
             @if (product().isOnOffer && product().compareAtPrice) {
               <s class="small text-muted ms-1">{{ product().compareAtPrice | taka }}</s>
@@ -89,7 +89,11 @@ import { MediaUrlService } from '../../_services/media-url.service';
          The row heights are settled before the first byte of any image. */
       aspect-ratio: 4 / 3;
       overflow: hidden;
-      background: #f7f4f0;
+      /* The same tint as the card body. Two different warm greys between the
+         photograph and the text below it made every tile read as two panels
+         stacked, which is the one thing the template's tiles are not.
+         Inherited from .wh-store, with the old value as the fallback. */
+      background: var(--wh-tile, #f7f4f0);
     }
 
     .wh-thumb img {

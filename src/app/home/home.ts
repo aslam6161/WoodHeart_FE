@@ -15,9 +15,9 @@ const ArrivalCount = 8;
   imports: [RouterLink, ProductCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="py-5 bg-light border-bottom">
-      <div class="container text-center">
-        <h1 class="display-5 fw-semibold">Interiors, made in Bangladesh</h1>
+    <section class="wh-band py-5">
+      <div class="container text-center py-lg-4">
+        <h1 class="display-5 fw-normal mb-3">Interiors, made in Bangladesh</h1>
         <p class="lead text-muted mb-4">
           Beds, wardrobes, dining sets, mirrors and lighting — plus interior design consultation.
         </p>
@@ -26,8 +26,9 @@ const ArrivalCount = 8;
     </section>
 
     @if (categories().length) {
-      <section class="container py-5">
-        <h2 class="h5 mb-3">Shop by room</h2>
+      <section class="container py-5 text-center">
+        <h2 class="wh-section-title">Shop by room</h2>
+        <p class="wh-section-lead">Every piece made here, to order.</p>
 
         <div class="row row-cols-2 row-cols-md-4 g-3">
           @for (category of categories(); track category.id) {
@@ -47,9 +48,12 @@ const ArrivalCount = 8;
 
     @if (arrivals().length) {
       <section class="container pb-5">
-        <div class="d-flex justify-content-between align-items-end mb-3">
-          <h2 class="h5 mb-0">New arrivals</h2>
-          <a class="small" routerLink="/products">See all</a>
+        <div class="text-center">
+          <h2 class="wh-section-title">New arrivals</h2>
+          <p class="wh-section-lead">
+            The most recent pieces off the workshop floor.
+            <a routerLink="/products">See all</a>
+          </p>
         </div>
 
         <div class="row row-cols-2 row-cols-md-4 g-3">
