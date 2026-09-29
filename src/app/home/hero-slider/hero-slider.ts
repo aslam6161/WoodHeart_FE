@@ -16,6 +16,9 @@ import { MediaUrlService } from '../../_services/media-url.service';
 /** How long a slide holds before the next one fades in. */
 const DwellMs = 6000;
 
+/** How many pieces the hero carries. Three is what the template shows. */
+const SlideCount = 3;
+
 /**
  * The home page's fading hero.
  *
@@ -96,6 +99,15 @@ const DwellMs = 6000;
                     [attr.loading]="i === 0 ? 'eager' : 'lazy'"
                     [attr.fetchpriority]="i === 0 ? 'high' : null"
                     decoding="async" />
+                } @else {
+                  <!-- The same monogram the grid tiles use, at hero size. It is
+                       the shop's own furniture either way; a slide that says so
+                       plainly is better than a stock photograph of somebody
+                       else's, and it becomes a photograph the day one is
+                       uploaded. -->
+                  <div class="wh-hero__empty" aria-hidden="true">
+                    <span>{{ item.initial }}</span>
+                  </div>
                 }
               </div>
             </div>
@@ -137,14 +149,18 @@ const DwellMs = 6000;
       grid-area: 1 / 1;
       opacity: 0;
       visibility: hidden;
-      transition:
-        opacity 0.6s ease-in-out,
-        visibility 0.6s;
     }
 
+    /* Only the arriving slide is animated. Cross-dissolving the pair — which
+       is what the template does — works for slides that are one full-bleed
+       photograph each; here the slides are text, at different heights, and
+       fading them through one another renders two names over each other for
+       half a second. The one leaving goes at once, the one arriving fades up
+       over the empty band. */
     .wh-hero__slide--on {
       opacity: 1;
       visibility: visible;
+      transition: opacity 0.6s ease-in-out;
     }
 
     .wh-hero__eyebrow {
@@ -208,6 +224,20 @@ const DwellMs = 6000;
       object-fit: contain;
     }
 
+    /* White, not the grid tile's grey: that grey is a shade off the band it
+       would sit on here, so the panel vanished and left a letter floating in
+       the middle of the hero. */
+    .wh-hero__empty {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 4 / 3;
+      background: #fff;
+      color: #b9ada0;
+      font-size: clamp(4rem, 12vw, 7rem);
+      font-weight: 600;
+      line-height: 1;
+    }
+
     .wh-hero__dots {
       display: flex;
       justify-content: center;
@@ -233,7 +263,7 @@ const DwellMs = 6000;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .wh-hero__slide {
+      .wh-hero__slide--on {
         transition: none;
       }
     }
@@ -250,24 +280,30 @@ export class HeroSlider implements OnDestroy {
   private held = false;
 
   /**
-   * At most three, and only pieces that have a photograph.
+   * At most three, photographed pieces first.
    *
-   * A hero slide is mostly its picture; one showing a placeholder letter the
-   * size of a wardrobe is worse than one fewer slide.
+   * A hero slide is mostly its picture, so the ones that have one lead. It
+   * does not stop at them, though: a shop that has photographed a single piece
+   * would otherwise get a hero that never moves — one slide, no dots, a banner
+   * wearing a carousel's markup — and would have no way to tell whether the
+   * thing works. The pieces behind it show their monogram instead and turn
+   * into photographs as the shop uploads them.
    */
-  protected readonly slides = computed(() =>
-    this.products()
-      .filter(product => !!product.primaryImagePath)
-      .slice(0, 3)
-      .map(product => ({
-        product,
-        image: this.media.image(product.primaryImagePath, {
-          width: 560,
-          height: 420,
-          fit: 'limit'
-        })
-      }))
-  );
+  protected readonly slides = computed(() => {
+    const products = this.products();
+    const photographed = products.filter(product => !!product.primaryImagePath);
+    const rest = products.filter(product => !product.primaryImagePath);
+
+    return [...photographed, ...rest].slice(0, SlideCount).map(product => ({
+      product,
+      initial: product.nameEn.charAt(0).toUpperCase(),
+      image: this.media.image(product.primaryImagePath, {
+        width: 560,
+        height: 420,
+        fit: 'limit'
+      })
+    }));
+  });
 
   constructor() {
     // Browser only: there is nothing to advance on the server, and an interval
