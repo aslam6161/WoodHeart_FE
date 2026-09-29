@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { of } from 'rxjs';
@@ -7,23 +15,33 @@ import { CategoryTree, StorefrontProduct } from '../_models/catalog';
 import { CatalogService } from '../_services/catalog.service';
 import { SeoService } from '../_services/seo.service';
 import { ProductCard } from '../catalog/product-card/product-card';
+import { HeroSlider } from './hero-slider/hero-slider';
 
 const ArrivalCount = 8;
+const HeroCount = 3;
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, ProductCard],
+  imports: [RouterLink, ProductCard, HeroSlider],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="wh-band py-5">
-      <div class="container text-center py-lg-4">
-        <h1 class="display-5 fw-normal mb-3">Interiors, made in Bangladesh</h1>
-        <p class="lead text-muted mb-4">
-          Beds, wardrobes, dining sets, mirrors and lighting — plus interior design consultation.
-        </p>
-        <a class="btn btn-dark btn-lg" routerLink="/products">Browse the collection</a>
-      </div>
-    </section>
+    <!-- The slider needs photographed products to be worth anything. Until
+         the shop has some, the flat band below says the same thing and says it
+         immediately — which is better than three slides of placeholder tiles
+         fading into one another. -->
+    @if (hasHero()) {
+      <app-hero-slider [products]="featured()" />
+    } @else {
+      <section class="wh-band py-5">
+        <div class="container text-center py-lg-4">
+          <h1 class="display-5 fw-normal mb-3">Interiors, made in Bangladesh</h1>
+          <p class="lead text-muted mb-4">
+            Beds, wardrobes, dining sets, mirrors and lighting — plus interior design consultation.
+          </p>
+          <a class="btn btn-dark btn-lg" routerLink="/products">Browse the collection</a>
+        </div>
+      </section>
+    }
 
     @if (categories().length) {
       <section class="container py-5 text-center">
@@ -75,6 +93,26 @@ export class Home implements OnInit {
   protected readonly categories = signal<CategoryTree[]>([]);
   protected readonly arrivals = signal<StorefrontProduct[]>([]);
 
+  private readonly flagged = signal<StorefrontProduct[]>([]);
+
+  /**
+   * What the hero shows.
+   *
+   * The shop's own choice first. Nothing is flagged featured on a fresh
+   * install, though, and an empty hero on the landing page is a worse answer
+   * than a recent piece — so it falls back to the newest arrivals. Either way
+   * the slider itself keeps only the ones with a photograph, because a hero
+   * slide is mostly its picture.
+   */
+  protected readonly featured = computed(() =>
+    this.flagged().length > 0 ? this.flagged() : this.arrivals().slice(0, HeroCount)
+  );
+
+  /** True once there is at least one featured or recent piece with a photo. */
+  protected readonly hasHero = computed(() =>
+    this.featured().some(product => !!product.primaryImagePath)
+  );
+
   ngOnInit(): void {
     this.seo.apply({
       title: 'Interiors, made in Bangladesh',
@@ -89,6 +127,18 @@ export class Home implements OnInit {
     // is the page a customer lands on from a search result: an apology where
     // the furniture should be costs more than a shorter page, and the header,
     // hero and navigation still work.
+    // Featured pieces carry the hero. Asked for separately rather than
+    // filtered out of the arrivals, because "what the shop wants to show" and
+    // "what it made most recently" are different questions and the shop
+    // answers the first one itself, with a flag on the product.
+    this.catalog
+      .search({ pageSize: HeroCount, isFeatured: true })
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(result => this.flagged.set(result?.result ?? []));
+
     this.catalog
       .getCategories()
       .pipe(
