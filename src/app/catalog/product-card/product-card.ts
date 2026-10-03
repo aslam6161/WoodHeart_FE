@@ -17,9 +17,17 @@ import { MediaUrlService } from '../../_services/media-url.service';
   imports: [RouterLink, TakaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <article class="card h-100 wh-card">
-      <a class="text-decoration-none text-reset" [routerLink]="['/products', product().slug]">
-        <div class="wh-thumb">
+    <article class="wh-card">
+      <!-- The tile, the title and the action bar are three separate links
+           rather than one anchor wrapping the lot. Nesting a link inside a link
+           is invalid, and a single card-sized anchor gives a screen reader one
+           enormous target whose name is the whole card. -->
+      <div class="wh-tile">
+        <a
+          class="wh-tile__link"
+          [routerLink]="['/products', product().slug]"
+          tabindex="-1"
+          aria-hidden="true">
           @if (imageUrl(); as url) {
             <img
               [src]="url"
@@ -31,74 +39,99 @@ import { MediaUrlService } from '../../_services/media-url.service';
               loading="lazy"
               decoding="async" />
           } @else {
-            <!-- No media pipeline yet, so most products have no image. A
-                 neutral tile is deliberate: a broken <img> is worse than an
+            <!-- A neutral tile is deliberate: a broken image is worse than an
                  honest blank, and a stock photograph of someone else's
                  furniture is worse than both. -->
-            <div class="wh-thumb-empty" aria-hidden="true">
+            <div class="wh-tile__empty" aria-hidden="true">
               <span>{{ initial() }}</span>
             </div>
           }
+        </a>
 
-          @if (product().isOnOffer && product().discountPercent) {
-            <span class="badge text-bg-danger wh-badge">−{{ product().discountPercent }}%</span>
+        <span class="wh-tile__wash" aria-hidden="true"></span>
+
+        @if (product().isOnOffer && product().discountPercent) {
+          <span class="wh-flag">-{{ product().discountPercent }}%</span>
+        }
+
+        <!-- Slides up on hover, and appears on keyboard focus too: a control
+             that only exists for a pointer is a control nobody navigating by
+             keyboard can reach. -->
+        <a class="wh-tile__bar" [routerLink]="['/products', product().slug]">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5c5 0 8.7 3.6 10 7-1.3 3.4-5 7-10 7S3.3 15.4 2 12c1.3-3.4 5-7 10-7zm0 2.5A4.5 4.5 0 1016.5 12 4.5 4.5 0 0012 7.5zm0 2A2.5 2.5 0 119.5 12 2.5 2.5 0 0112 9.5z" />
+          </svg>
+          <!-- Not "add to cart", which is what the template says. Almost
+               everything this shop sells has a wood and a size to choose, and
+               the list API carries no variant id, so there is nothing a card
+               could honestly put in a basket. -->
+          {{ product().variantCount > 1 ? 'Choose options' : 'View this piece' }}
+        </a>
+      </div>
+
+      <div class="wh-card__body">
+        <p class="wh-card__eyebrow">{{ product().categoryNameEn }}</p>
+
+        <h3 class="wh-card__title">
+          <a [routerLink]="['/products', product().slug]">{{ product().nameEn }}</a>
+        </h3>
+
+        @if (product().nameBn; as bn) {
+          <p class="wh-card__bn">{{ bn }}</p>
+        }
+
+        <p class="wh-card__price">
+          @if (product().variantCount > 1) {
+            <span class="wh-card__from">from </span>
           }
-        </div>
+          <span class="wh-price">{{ product().fromPrice | taka }}</span>
 
-        <div class="card-body">
-          <p class="small text-muted mb-1">{{ product().categoryNameEn }}</p>
-
-          <h3 class="h6 card-title mb-1">{{ product().nameEn }}</h3>
-
-          @if (product().nameBn; as bn) {
-            <p class="small text-muted mb-2">{{ bn }}</p>
+          @if (product().isOnOffer && product().compareAtPrice) {
+            <s class="wh-card__was">{{ product().compareAtPrice | taka }}</s>
           }
+        </p>
 
-          <p class="mb-1">
-            <!-- "from" only when there is more than one variant to choose
-                 between. On a single-variant product it reads as a hedge. -->
-            @if (product().variantCount > 1) {
-              <span class="small text-muted">from </span>
-            }
-            <span class="fw-semibold">{{ product().fromPrice | taka }}</span>
-
-            @if (product().isOnOffer && product().compareAtPrice) {
-              <s class="small text-muted ms-1">{{ product().compareAtPrice | taka }}</s>
-            }
-          </p>
-
-          @if (product().leadTimeDays; as days) {
-            <p class="small text-muted mb-0">Made to order · about {{ days }} working days</p>
-          }
-        </div>
-      </a>
+        @if (product().leadTimeDays; as days) {
+          <p class="wh-card__lead">Made to order - about {{ days }} working days</p>
+        }
+      </div>
     </article>
   `,
   styles: `
     .wh-card {
-      transition: box-shadow 0.15s ease-in-out;
+      height: 100%;
+      text-align: center;
     }
 
-    .wh-card:hover {
-      box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 10%);
-    }
-
-    .wh-thumb {
+    .wh-tile {
       position: relative;
       /* A fixed ratio, so a grid of cards does not reflow as images arrive.
          The row heights are settled before the first byte of any image. */
       aspect-ratio: 4 / 3;
       overflow: hidden;
-      background: #f7f4f0;
+      background: var(--wh-tile, #f8f9fc);
     }
 
-    .wh-thumb img {
+    .wh-tile__link {
+      display: block;
+      height: 100%;
+    }
+
+    .wh-tile img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s linear;
     }
 
-    .wh-thumb-empty {
+    /* The template scales to 1.3. At that size a bed shot tight in its frame
+       loses its own headboard, so this stops at 1.12: enough to feel alive,
+       little enough to still show the piece being sold. */
+    .wh-card:hover .wh-tile img {
+      transform: scale(1.12);
+    }
+
+    .wh-tile__empty {
       display: grid;
       place-items: center;
       height: 100%;
@@ -107,10 +140,136 @@ import { MediaUrlService } from '../../_services/media-url.service';
       font-weight: 600;
     }
 
-    .wh-badge {
+    .wh-tile__wash {
       position: absolute;
-      top: 0.5rem;
-      inset-inline-start: 0.5rem;
+      inset: 0;
+      background: rgb(106 119 129 / 10%);
+      opacity: 0;
+      transition: opacity 0.3s linear;
+      pointer-events: none;
+    }
+
+    .wh-card:hover .wh-tile__wash {
+      opacity: 1;
+    }
+
+    .wh-flag {
+      position: absolute;
+      top: 0.625rem;
+      inset-inline-end: 0;
+      min-width: 3.75rem;
+      padding: 0.25rem 0.5rem;
+      background: #d8924c;
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .wh-tile__bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 2.5rem;
+      background: #33383c;
+      color: #fff;
+      font-size: 0.8125rem;
+      text-decoration: none;
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        bottom 0.3s linear,
+        opacity 0.3s linear;
+    }
+
+    .wh-tile__bar svg {
+      width: 1rem;
+      height: 1rem;
+      fill: currentColor;
+    }
+
+    .wh-card:hover .wh-tile__bar,
+    .wh-tile__bar:focus-visible {
+      opacity: 1;
+      visibility: visible;
+      bottom: 0;
+    }
+
+    .wh-tile__bar:hover,
+    .wh-tile__bar:focus {
+      color: #fff;
+    }
+
+    /* Touch has no hover: on a phone the bar would either never appear or,
+       with emulated hover, appear only after a tap meant to open the product.
+       The tile itself is a link there, so the bar is simply gone. */
+    @media (hover: none) {
+      .wh-tile__bar {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wh-tile img,
+      .wh-tile__wash,
+      .wh-tile__bar {
+        transition: none;
+      }
+
+      .wh-card:hover .wh-tile img {
+        transform: none;
+      }
+    }
+
+    .wh-card__body {
+      padding: 1.25rem 0.5rem 0;
+    }
+
+    .wh-card__eyebrow {
+      margin-bottom: 0.25rem;
+      color: var(--wh-quiet, #7a756f);
+      font-size: 0.8125rem;
+    }
+
+    .wh-card__title {
+      margin-bottom: 0.25rem;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .wh-card__title a {
+      color: var(--wh-ink, #5f5b57);
+      text-decoration: none;
+      transition: color 0.3s linear;
+    }
+
+    .wh-card:hover .wh-card__title a {
+      color: var(--wh-accent, #e99c2e);
+    }
+
+    .wh-card__bn,
+    .wh-card__lead {
+      margin-bottom: 0.25rem;
+      color: var(--wh-quiet, #7a756f);
+      font-size: 0.8125rem;
+    }
+
+    .wh-card__price {
+      margin-bottom: 0.25rem;
+    }
+
+    .wh-card__from,
+    .wh-card__was {
+      color: var(--wh-quiet, #7a756f);
+      font-size: 0.875rem;
+    }
+
+    .wh-card__was {
+      margin-inline-start: 0.375rem;
     }
   `
 })

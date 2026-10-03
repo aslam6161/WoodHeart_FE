@@ -8,18 +8,34 @@
 
 // Brand tokens. Overriding Bootstrap's own variables here means every button,
 // link and badge picks up the palette without a single override rule.
-$primary: #6b4423; // walnut
-$secondary: #8c7b6b; // warm grey
-$dark: #2e2622;
-$light: #f7f4f0; // warm off-white, not Bootstrap's cool grey
-$body-color: #2e2622;
-$border-radius: 0.375rem;
+//
+// These are the *storefront's* colours. The admin panel sets its own inside
+// `.wh-admin` — see styles/_admin.scss — so changing anything here moves the
+// public site and leaves the panel alone.
+$primary: #e99c2e; // amber, the one accent
+$secondary: #5f5b57; // warm grey-brown, for headings and quiet buttons
+$dark: #43465d;
+$light: #f8f9fd; // the near-white the hero and section bands sit on
+
+// Deliberately darker than the template's own body colour.
+//
+// Furn sets body text to #a09e9c, which is about 2.4:1 on white — it fails
+// WCAG AA at any size. It survives on a template whose pages are mostly
+// photographs; it would not survive on a page of prices, delivery terms and
+// Bangla product names, which is what this shop actually publishes. #5f5b57
+// is the template's own heading colour and clears AA at 6.4:1, so the
+// character is kept and the text stays readable.
+$body-color: #5f5b57;
+
+// Furn's buttons are nearly square: 3px. It is most of why the template reads
+// as furniture rather than as software.
+$border-radius: 0.1875rem;
 
 $font-family-sans-serif:
+  'Roboto',
   'Segoe UI',
   system-ui,
   -apple-system,
-  'Helvetica Neue',
   // Bengali fallbacks, so Bangla product names render properly rather than
   // dropping to a default that mangles conjuncts.
   'Noto Sans Bengali',
@@ -36,8 +52,10 @@ $font-family-sans-serif:
   $font-family-sans-serif: $font-family-sans-serif
 );
 
-// The admin panel's own palette, scoped entirely inside `.wh-admin`. Loaded
-// after Bootstrap so its rules win without needing `!important` on every line.
+// Both surfaces' own rules, loaded after Bootstrap so they win without needing
+// `!important` on every line. Each is scoped to its shell's class — `.wh-store`
+// and `.wh-admin` — so neither can reach into the other.
+@use './styles/storefront';
 @use './styles/admin';
 
 html,

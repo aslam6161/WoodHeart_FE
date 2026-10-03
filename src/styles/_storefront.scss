@@ -1,0 +1,183 @@
+// -----------------------------------------------------------------------------
+// The storefront's own look.
+//
+// Follows the Furn ecommerce template: a near-white page, one amber accent,
+// warm grey-brown type, tinted product tiles and nearly square buttons. The
+// palette itself lives in styles.scss, because it is Bootstrap's own `$primary`
+// and `$secondary` — the storefront is the default surface, so it gets the
+// defaults.
+//
+// What is here is the part Bootstrap has no variable for: how a product tile
+// behaves, what a section heading looks like, how a price is weighted.
+//
+// Everything is scoped inside `.wh-store`, the class on the storefront shell,
+// so none of it can reach the admin panel. The two surfaces share a stylesheet
+// and nothing else.
+// -----------------------------------------------------------------------------
+
+.wh-store {
+  --wh-accent: #e99c2e;
+  --wh-accent-dark: #d8924c;
+  --wh-ink: #5f5b57;
+  // Darker than the template's #a09e9c, which fails WCAG AA. See the note in
+  // styles.scss — this clears AA and keeps the quiet, warm feel.
+  --wh-quiet: #7a756f;
+  --wh-band: #f8f9fd;
+  --wh-tile: #f8f9fc;
+  --wh-line: #ebebeb;
+
+  color: var(--wh-ink);
+
+  .text-muted {
+    color: var(--wh-quiet) !important;
+  }
+
+  // --- type -----------------------------------------------------------------
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--wh-ink);
+    font-weight: 500;
+  }
+
+  // The template's section headings are large, light and centred. Applied to a
+  // class rather than to every h2, because a listing page's headings are
+  // navigation and should stay quiet.
+  .wh-section-title {
+    font-size: 1.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .wh-section-lead {
+    color: var(--wh-quiet);
+    margin-bottom: 2.5rem;
+  }
+
+  // --- the band the hero and quiet sections sit on --------------------------
+  .wh-band {
+    background-color: var(--wh-band);
+  }
+
+  // --- buttons --------------------------------------------------------------
+  // Furn's are outlines that fill on hover, which is why the pages read as
+  // calm: nothing is shouting until you reach for it.
+  .btn {
+    font-weight: 500;
+    padding-inline: 1.25rem;
+  }
+
+  .btn-primary {
+    background-color: var(--wh-accent);
+    border-color: var(--wh-accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: transparent;
+    border-color: var(--wh-accent);
+    color: var(--wh-accent);
+  }
+
+  // `btn-dark` is what the storefront's existing calls to action use, so it is
+  // mapped rather than renamed across every template.
+  .btn-dark {
+    background-color: var(--wh-accent);
+    border-color: var(--wh-accent);
+    color: #fff;
+  }
+
+  .btn-dark:hover,
+  .btn-dark:focus {
+    background-color: transparent;
+    border-color: var(--wh-accent);
+    color: var(--wh-accent);
+  }
+
+  .btn-outline-secondary {
+    border-color: var(--wh-ink);
+    color: var(--wh-ink);
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--wh-ink);
+    border-color: var(--wh-ink);
+    color: #fff;
+  }
+
+  // --- header ---------------------------------------------------------------
+  .navbar {
+    border-bottom: 1px solid var(--wh-line) !important;
+  }
+
+  .navbar-brand {
+    color: var(--wh-ink);
+    font-size: 1.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  .navbar .nav-link {
+    color: var(--wh-ink);
+  }
+
+  .navbar .nav-link:hover,
+  .navbar .nav-link.active {
+    color: var(--wh-accent);
+  }
+
+  // --- product tiles --------------------------------------------------------
+  // The template's signature: a tinted square that the photograph floats on,
+  // with the name turning amber as the pointer arrives.
+  .wh-card {
+    background-color: var(--wh-tile);
+    border: 0;
+  }
+
+  .wh-card .card-body {
+    background-color: var(--wh-tile);
+  }
+
+  .wh-card:hover .card-title {
+    color: var(--wh-accent);
+  }
+
+  .wh-card .card-title {
+    transition: color 0.3s linear;
+  }
+
+  // The price is the one number on a tile anybody is looking for.
+  .wh-price {
+    color: var(--wh-accent);
+    font-weight: 700;
+  }
+
+  // --- links ----------------------------------------------------------------
+  a {
+    color: var(--wh-accent);
+  }
+
+  a:hover {
+    color: var(--wh-accent-dark);
+  }
+
+  // A product tile is one big link; it must not paint its own text amber.
+  a.text-reset,
+  a.text-reset:hover {
+    color: inherit;
+  }
+
+  // --- footer ---------------------------------------------------------------
+  footer {
+    background-color: var(--wh-band);
+  }
+
+  footer h2,
+  footer h3,
+  footer .h6 {
+    font-weight: 700;
+  }
+}
