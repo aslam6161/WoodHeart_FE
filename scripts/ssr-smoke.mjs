@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server-rendering smoke test.
  *
  * WHY THIS EXISTS
@@ -356,7 +356,17 @@ async function main() {
       // is in the first response, not fetched after hydration.
       check('the product is in the served HTML', html.includes('Segun King Bed'));
       check('the price is formatted as taka', html.includes('৳68,500'));
-      check('the category tree rendered', html.includes('Bedroom'));
+      // The room grid is gone, and stays gone: its counts came from the parent
+      // categories, where no product lives, so every room read "0 products".
+      check('the room grid is not back', !html.includes('Shop by room'));
+
+      // The counts have to survive hydration, and they travel in a header.
+      // The transfer cache replays the server's responses without their
+      // headers unless one is named, and the home page's scroll and every
+      // pager in the app read `X-Pagination` — so when it is dropped a
+      // server-rendered listing quietly believes it is the whole catalogue.
+      check('the paging header survives into the transfer state', html.includes('X-Pagination'));
+      check('and this page of one has nothing more to show', !html.includes('Show more pieces'));
 
       // The card is the only place most visitors ever see a product, and its
       // image is most of the page weight. If the transformation stopped being
@@ -378,8 +388,31 @@ async function main() {
       // If the envelope were handed back as the item list, this grid would be
       // empty and the page would look like an empty catalogue.
       check('products came out of the envelope', html.includes('Segun King Bed'));
-      check('the nested category rendered', html.includes('Beds'));
       check('the count from X-Pagination rendered', html.includes('1 product'));
+
+      // The category panel shows one level at a time, and which level is open
+      // comes from the URL — so the server has to get it right on the first
+      // response, with no click to recover from. 'All Bedroom' is the row that
+      // only exists inside a room, which is why it is the marker rather than a
+      // category name that also appears on the product cards.
+      check('the panel starts at the top level', html.includes('All products'));
+      // The back row is the marker for "inside a room": it is the one piece of
+      // the panel that only a drilled-in level renders, and unlike a category
+      // name it cannot also arrive on a product card. Matched as a class
+      // attribute, not a bare class name — the component's CSS is inlined into
+      // this very page, so `wh-cats__back` is present either way and a check
+      // for it would pass with the panel deleted.
+      check('and has not stepped into a room on its own', !html.includes('class="wh-cats__back"'));
+    }
+
+    console.log('--- a category URL opens the panel inside that room ---');
+    {
+      const { status, html } = await get('/products?category=bedroom');
+
+      check('it responds 200', status === 200, `got ${status}`);
+      check('the panel is inside the room, server side', html.includes('class="wh-cats__back"'));
+      check('the room names itself as the heading', html.includes('class="wh-cats__head'));
+      check('and its children are listed', html.includes('class="wh-cats__row"') && html.includes('Beds'));
     }
 
     console.log('--- product page head tags ---');

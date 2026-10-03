@@ -7,7 +7,11 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withHttpTransferCacheOptions
+} from '@angular/platform-browser';
 
 import { routes } from './app.routes';
 import { jwtInterceptor } from './_interceptors/jwt.interceptor';
@@ -42,7 +46,22 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([apiBaseInterceptor, loadingInterceptor, jwtInterceptor, errorInterceptor])
     ),
 
-    provideClientHydration(withEventReplay()),
+    /**
+     * `X-Pagination` has to be named, or the counts do not survive hydration.
+     *
+     * The transfer cache replays the responses the server already made so the
+     * browser does not fetch them twice — but it keeps only the body unless a
+     * header is listed here. Every paged endpoint in this app puts its counts
+     * in `X-Pagination`, so without this line a server-rendered listing comes
+     * back with its items and no idea there is a page two: the pager
+     * disappears, the home page stops loading as you scroll, and it looks
+     * like a backend fault. The API is answering correctly; the header was
+     * being dropped on this side.
+     */
+    provideClientHydration(
+      withEventReplay(),
+      withHttpTransferCacheOptions({ includeHeaders: ['X-Pagination'] })
+    ),
 
     /**
      * Starts the session restore as early as possible, and deliberately does
