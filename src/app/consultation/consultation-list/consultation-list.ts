@@ -5,6 +5,7 @@ import { MediaUrlService } from '../../_services/media-url.service';
 import { SeoService } from '../../_services/seo.service';
 import { TakaPipe } from '../../_pipes/taka.pipe';
 import { ConsultationService, MODE_LABELS } from '../../_models/consultations';
+import { DesignAssistant } from '../design-assistant/design-assistant';
 
 /**
  * "Talk to a designer" — what the shop sells an hour of.
@@ -20,7 +21,7 @@ import { ConsultationService, MODE_LABELS } from '../../_models/consultations';
  */
 @Component({
   selector: 'app-consultation-list',
-  imports: [RouterLink, TakaPipe],
+  imports: [RouterLink, TakaPipe, DesignAssistant],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container py-4 py-md-5">
@@ -31,6 +32,11 @@ import { ConsultationService, MODE_LABELS } from '../../_models/consultations';
             An hour with somebody who has furnished a hundred Dhaka flats. Bring photographs,
             measurements, or nothing at all.
           </p>
+
+          <!-- Above the cards, because a customer who already knows what they
+               want scrolls past it, and the one who does not would otherwise
+               have left. -->
+          <app-design-assistant />
 
           @if (loading()) {
             <p class="text-muted small">Loading…</p>

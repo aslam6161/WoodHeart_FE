@@ -1,4 +1,4 @@
-﻿import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
@@ -10,10 +10,11 @@ import {
   CancelBooking,
   Consultant,
   ConsultationService as ConsultationServiceDto,
-  CreateBooking
+  CreateBooking,
+  DesignAdvice
 } from '../_models/consultations';
 import { PagedResult } from '../_models/pagination';
-import { handledInline, handlesNotFound } from '../_interceptors/http-context';
+import { handledInline, handlesNotFound, silentFailure } from '../_interceptors/http-context';
 
 /**
  * Consultations: what is offered, when it can happen, and booking one.
@@ -149,6 +150,42 @@ export class ConsultationApiService {
       .pipe(catchError(envelopeFromError));
   }
 
+  /**
+   * Whether the shop is offering instant design advice at all.
+   *
+   * Asked before the box is rendered, not after it is typed into. A shop with
+   * no model configured should show a consultation page with nothing broken on
+   * it, rather than one that fails when somebody finally uses it.
+   */
+  adviceOffered(): Observable<boolean> {
+    return this.http
+      .get<GeneralResponseOf<boolean>>(`${this.baseUrl}/advice/offered`, {
+        context: silentFailure()
+      })
+      .pipe(
+        map(response => response.data ?? false),
+        catchError(() => of(false))
+      );
+  }
+
+  /**
+   * A design question, answered from the shop's own catalogue.
+   *
+   * The refusal is part of the screen here. "The assistant is busy" and "the
+   * assistant is switched off" are different sentences for the customer, and
+   * the API says which in `errorCode` — so the envelope comes back rather than
+   * being thrown away with the status.
+   */
+  askDesigner(question: string): Observable<GeneralResponseOf<DesignAdvice>> {
+    return this.http
+      .post<GeneralResponseOf<DesignAdvice>>(
+        `${this.baseUrl}/advice`,
+        { question },
+        { context: handledInline() }
+      )
+      .pipe(catchError(adviceEnvelopeFromError));
+  }
+
   /** A signed-in customer's own bookings, soonest first. */
   getMine(page = 1, pageSize = 10): Observable<PagedResult<Booking>> {
     const params = new HttpParams().set('page', page).set('pageSize', pageSize);
@@ -183,6 +220,15 @@ function nullOnNotFound(error: unknown): Observable<null> {
 function envelopeFromError(error: unknown): Observable<GeneralResponseOf<Booking>> {
   if (error instanceof HttpErrorResponse && error.error && typeof error.error === 'object') {
     return of(error.error as GeneralResponseOf<Booking>);
+  }
+
+  return throwError(() => error);
+}
+
+/** The same trick as above, for the assistant's own refusals. */
+function adviceEnvelopeFromError(error: unknown): Observable<GeneralResponseOf<DesignAdvice>> {
+  if (error instanceof HttpErrorResponse && error.error && typeof error.error === 'object') {
+    return of(error.error as GeneralResponseOf<DesignAdvice>);
   }
 
   return throwError(() => error);

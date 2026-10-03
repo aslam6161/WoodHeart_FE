@@ -1,3 +1,4 @@
+import { StorefrontProduct } from './catalog';
 import { DeliveryAddress } from './order';
 
 /**
@@ -211,3 +212,16 @@ export const ROOM_TYPES = [
   'Whole flat',
   'Office'
 ] as const;
+
+/**
+ * What the design assistant answered.
+ *
+ * The prose and the pieces are separate because the API keeps them separate:
+ * the model chooses which products to point at, and the shop's own database
+ * says what they cost. The storefront renders the same card it renders
+ * everywhere else, so a price here is the price on the product page.
+ */
+export interface DesignAdvice {
+  reply: string;
+  products: StorefrontProduct[];
+}
