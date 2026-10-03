@@ -13,7 +13,7 @@ import {
   StorefrontProductDetail
 } from '../_models/catalog';
 import { appendIfPresent, getPaginatedResult, getPaginationHeaders } from './paginationHelper';
-import { handlesNotFound } from '../_interceptors/http-context';
+import { handlesNotFound, silentFailure } from '../_interceptors/http-context';
 
 /**
  * The public catalog — reads only.
@@ -49,6 +49,26 @@ export class CatalogService {
       this.toParams(query),
       this.http
     );
+  }
+
+  /**
+   * The nearest products to a search that found nothing.
+   *
+   * Asked for only when a listing has already come back empty, which is why it
+   * is a second call rather than part of the first: the overwhelming majority
+   * of searches find something, and those should not pay for this.
+   *
+   * Failures are swallowed by the caller into an empty list. A suggestion is a
+   * courtesy — an error message where one was going to appear is worse than no
+   * suggestion at all.
+   */
+  getSuggestions(search: string): Observable<StorefrontProduct[]> {
+    return this.http
+      .get<GeneralResponseOf<StorefrontProduct[]>>(`${this.baseUrl}products/suggestions`, {
+        params: new HttpParams().set('search', search),
+        context: silentFailure()
+      })
+      .pipe(map(response => response.data ?? []));
   }
 
   getProduct(slug: string): Observable<StorefrontProductDetail | null> {

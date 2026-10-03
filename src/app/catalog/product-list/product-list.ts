@@ -110,9 +110,33 @@ const SortOptions: ReadonlyArray<{ value: ProductSort; label: string }> = [
               We could not load the catalogue just now. Please refresh the page.
             </div>
           } @else if (products().length === 0 && !loading()) {
-            <div class="text-center py-5">
-              <p class="mb-2">Nothing matches those filters.</p>
-              <a class="btn btn-outline-dark btn-sm" routerLink="/products">Clear filters</a>
+            <div class="py-5">
+              <div class="text-center">
+                @if (search(); as term) {
+                  <p class="mb-2">Nothing matches “{{ term }}”.</p>
+                } @else {
+                  <p class="mb-2">Nothing matches those filters.</p>
+                }
+
+                <a class="btn btn-outline-dark btn-sm" routerLink="/products">Clear filters</a>
+              </div>
+
+              <!-- A misspelling is the likeliest reason a search of a catalogue
+                   this size finds nothing, and the shop would rather show the
+                   wardrobe than be right about the spelling. -->
+              @if (suggestions().length) {
+                <div class="mt-5">
+                  <h2 class="wh-filter__title text-center">Did you mean</h2>
+
+                  <div class="row row-cols-2 row-cols-md-4 g-3 justify-content-center">
+                    @for (product of suggestions(); track product.id) {
+                      <div class="col">
+                        <app-product-card [product]="product" />
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           } @else {
             <div class="row row-cols-2 row-cols-md-3 g-3" [class.wh-loading]="loading()">
@@ -193,6 +217,7 @@ export class ProductList implements OnInit {
 
   protected readonly categories = signal<CategoryTree[]>([]);
   protected readonly products = signal<StorefrontProduct[]>([]);
+  protected readonly suggestions = signal<StorefrontProduct[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -233,6 +258,7 @@ export class ProductList implements OnInit {
       )
       .subscribe(result => {
         this.loading.set(false);
+        this.suggestions.set([]);
 
         if (!result) {
           this.products.set([]);
@@ -240,12 +266,41 @@ export class ProductList implements OnInit {
           return;
         }
 
-        this.products.set(result.result ?? []);
+        const found = result.result ?? [];
+
+        this.products.set(found);
         this.pagination.set(result.pagination ?? null);
+
+        if (found.length === 0) {
+          this.loadSuggestions();
+        }
       });
   }
 
   // ---------------------------------------------------------------------------
+
+  /**
+   * Asked only of a search, and only once it has found nothing.
+   *
+   * A category or a price range that matches nothing is a filter the customer
+   * can see and change; there is nothing to guess at. A word that matches
+   * nothing might simply be a word this shop spells differently.
+   */
+  private loadSuggestions(): void {
+    const term = this.search()?.trim();
+
+    if (!term) {
+      return;
+    }
+
+    this.catalog
+      .getSuggestions(term)
+      .pipe(
+        catchError(() => of([] as StorefrontProduct[])),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(near => this.suggestions.set(near));
+  }
 
   private readQuery(params: ParamMap): ProductQuery {
     const slug = params.get('category');

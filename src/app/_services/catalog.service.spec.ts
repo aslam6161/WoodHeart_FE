@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { CatalogService } from './catalog.service';
-import { HANDLES_NOT_FOUND } from '../_interceptors/http-context';
+import { HANDLES_NOT_FOUND, SILENT_FAILURE } from '../_interceptors/http-context';
 import { StorefrontProduct } from '../_models/catalog';
 import { environment } from '../../environments/environment';
 
@@ -144,6 +144,44 @@ describe('CatalogService', () => {
       // A slug arriving from a URL is not trusted to be path-safe. Left raw,
       // `a b/c` would address a different endpoint entirely.
       http.expectOne(`${base}products/a%20b%2Fc`).flush({ isSuccess: true, data: null });
+    });
+  });
+
+  describe('getSuggestions', () => {
+    it('asks the suggestions endpoint for the term as typed', () => {
+      service.getSuggestions('wardorbe').subscribe();
+
+      // The term is sent uncorrected. Correcting it here would mean two places
+      // decided what a customer meant, and the server's answer is the one that
+      // can see the catalogue.
+      const request = http.expectOne(r => r.url === `${base}products/suggestions`);
+
+      expect(request.request.params.get('search')).toBe('wardorbe');
+
+      request.flush({ isSuccess: true, data: [] });
+    });
+
+    it('fails silently, because a suggestion is a courtesy', () => {
+      service.getSuggestions('wardorbe').subscribe();
+
+      // An error banner where a helpful hint was going to appear is worse than
+      // no hint: the search already said it found nothing, and that was true.
+      const request = http.expectOne(r => r.url === `${base}products/suggestions`);
+
+      expect(request.request.context.get(SILENT_FAILURE)).toBe(true);
+
+      request.flush({ isSuccess: true, data: [] });
+    });
+
+    it('returns an empty list rather than null when the envelope carries no data', () => {
+      let received: unknown;
+
+      service.getSuggestions('wardorbe').subscribe(near => (received = near));
+
+      http.expectOne(r => r.url === `${base}products/suggestions`)
+        .flush({ isSuccess: true, data: null });
+
+      expect(received).toEqual([]);
     });
   });
 
