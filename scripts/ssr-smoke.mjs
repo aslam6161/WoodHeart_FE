@@ -388,8 +388,25 @@ async function main() {
       // If the envelope were handed back as the item list, this grid would be
       // empty and the page would look like an empty catalogue.
       check('products came out of the envelope', html.includes('Segun King Bed'));
-      check('the nested category rendered', html.includes('Beds'));
       check('the count from X-Pagination rendered', html.includes('1 product'));
+
+      // The category panel shows one level at a time, and which level is open
+      // comes from the URL — so the server has to get it right on the first
+      // response, with no click to recover from. 'All Bedroom' is the row that
+      // only exists inside a room, which is why it is the marker rather than a
+      // category name that also appears on the product cards.
+      check('the panel starts at the top level', html.includes('All products'));
+      check('and has not stepped into a room on its own', !html.includes('All Bedroom'));
+    }
+
+    console.log('--- a category URL opens the panel inside that room ---');
+    {
+      const { status, html } = await get('/products?category=bedroom');
+
+      check('it responds 200', status === 200, `got ${status}`);
+      check('the panel is inside the room, server side', html.includes('All Bedroom'));
+      check('its children are listed', html.includes('wh-cats__row'));
+      check('and a way back out is rendered', html.includes('wh-cats__back'));
     }
 
     console.log('--- product page head tags ---');

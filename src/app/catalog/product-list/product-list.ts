@@ -39,19 +39,6 @@ const SortOptions: ReadonlyArray<{ value: ProductSort; label: string }> = [
         <aside class="col-12 col-lg-3">
           <h2 class="h6 text-uppercase text-muted">Categories</h2>
 
-          <div class="mb-2">
-            <a
-              class="text-decoration-none"
-              [class.fw-semibold]="!categorySlug()"
-              [class.link-dark]="!categorySlug()"
-              [class.link-secondary]="categorySlug()"
-              routerLink="/products"
-              [queryParams]="{ category: null, page: null }"
-              queryParamsHandling="merge">
-              All products
-            </a>
-          </div>
-
           @if (categories().length) {
             <app-category-filter [categories]="categories()" [selectedSlug]="categorySlug()" />
           }
