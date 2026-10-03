@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { ShopChat } from '../shop-chat/shop-chat';
 import { RouterOutlet } from '@angular/router';
 import { Nav } from '../../nav/nav';
 import { Footer } from '../../footer/footer';
@@ -11,7 +12,7 @@ import { Footer } from '../../footer/footer';
  */
 @Component({
   selector: 'app-default-layout',
-  imports: [RouterOutlet, Nav, Footer],
+  imports: [RouterOutlet, Nav, Footer, ShopChat],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- "wh-store" is what every storefront rule in styles/_storefront.scss
@@ -26,6 +27,11 @@ import { Footer } from '../../footer/footer';
       </main>
 
       <app-footer />
+
+      <!-- Last in the shell and fixed to the corner: it belongs to the whole
+           storefront rather than any page, and it must not be in the tab order
+           before the page a customer came for. -->
+      <app-shop-chat />
     </div>
   `,
   styles: `
