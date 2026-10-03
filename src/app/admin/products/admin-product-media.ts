@@ -1,11 +1,13 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnInit,
   computed,
   inject,
   input,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -25,10 +27,17 @@ import { GeneralResponse } from '../../_models/generalResponse';
  * because there was no way to put a file through it — every product card on
  * the storefront renders a placeholder tile.
  *
- * <b>Alt text is required before the file picker opens, not after.</b> The
- * backend refuses an upload without it, and asking afterwards produces the
- * familiar outcome where every row has empty alt text because the upload had
- * already succeeded and nobody went back.
+ * <b>Alt text is required before the file is sent, not after.</b> The backend
+ * refuses an upload without it, and asking afterwards produces the familiar
+ * outcome where every row has empty alt text because the upload had already
+ * succeeded and nobody went back.
+ *
+ * <b>That requirement used to be enforced by disabling the file input, and the
+ * screen read as broken.</b> A disabled control states no reason, and the
+ * description's placeholder is a whole plausible sentence, so an empty
+ * required field looks like a filled one. The reasonable conclusion was that
+ * uploading did not work. So the picker is always live now, and a file chosen
+ * before its description waits on screen by name instead of being discarded.
  */
 @Component({
   selector: 'app-admin-product-media',
@@ -66,11 +75,15 @@ import { GeneralResponse } from '../../_models/generalResponse';
           <label class="form-label" for="altText">
             Describe the photograph <span class="text-danger">*</span>
           </label>
+          <!-- "e.g." carries the whole weight in that placeholder. Without it
+               this is a complete sentence sitting in a required field, and grey
+               text in a box is read as a value rather than as an example. -->
           <input
+            #altInput
             id="altText"
             class="form-control"
             maxlength="300"
-            placeholder="Segun wood king bed with a headboard, in a lit bedroom"
+            placeholder="e.g. Segun wood king bed with a headboard, in a lit bedroom"
             [ngModel]="altText()"
             (ngModelChange)="altText.set($event)" />
           <div class="form-text">
@@ -96,13 +109,31 @@ import { GeneralResponse } from '../../_models/generalResponse';
             class="form-control"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/quicktime"
-            [disabled]="!canUpload()"
             (change)="onFileChosen($event)" />
         </div>
       </div>
 
-      @if (!altText().trim()) {
-        <p class="small text-muted mt-2 mb-0">Write a description first — it is required.</p>
+      @if (pendingFile(); as waiting) {
+        @if (!uploading()) {
+          <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 mt-3 mb-0">
+            <span>
+              <strong>{{ waiting.name }}</strong>
+              @if (canUpload()) {
+                is ready to send.
+              } @else {
+                is waiting for a description — write one above.
+              }
+            </span>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-primary ms-auto"
+              [disabled]="!canUpload()"
+              (click)="uploadPending()">
+              Upload
+            </button>
+          </div>
+        }
       }
 
       @if (uploading()) {
@@ -219,6 +250,17 @@ export class AdminProductMediaManager implements OnInit {
   protected readonly mediaConfigured = computed(() => this.mediaUrl.isConfigured);
   protected readonly canUpload = computed(() => this.altText().trim().length >= 3);
 
+  /**
+   * A file that has been chosen but not sent yet.
+   *
+   * Set when somebody picks a file before writing a description, and also for
+   * the duration of every send — so a failed upload leaves the file here to be
+   * retried rather than making them find it on disk again.
+   */
+  protected readonly pendingFile = signal<File | null>(null);
+
+  private readonly altInput = viewChild<ElementRef<HTMLInputElement>>('altInput');
+
   private get id(): number {
     return Number(this.productId());
   }
@@ -263,6 +305,30 @@ export class AdminProductMediaManager implements OnInit {
     // event — which is exactly what happens after a failed upload.
     input.value = '';
 
+    if (!this.canUpload()) {
+      // Held, not refused. The description is genuinely required, but throwing
+      // the file away to enforce that means finding it on disk a second time.
+      this.pendingFile.set(file);
+      this.altInput()?.nativeElement.focus();
+      return;
+    }
+
+    this.send(file);
+  }
+
+  /** Sends the file that was waiting for its description. */
+  protected uploadPending(): void {
+    const file = this.pendingFile();
+
+    if (file && this.canUpload() && !this.uploading()) {
+      this.send(file);
+    }
+  }
+
+  private send(file: File): void {
+    // Held for the whole send so a failure is retryable from the button.
+    this.pendingFile.set(file);
+
     const isVideo = file.type.startsWith('video/');
 
     this.uploading.set(true);
@@ -292,6 +358,7 @@ export class AdminProductMediaManager implements OnInit {
 
         this.media.update(list => [...list, response.data!]);
         this.caption.set('');
+        this.pendingFile.set(null);
         this.toast.success('Uploaded.');
       },
       error: (error: HttpErrorResponse | Error) => {
