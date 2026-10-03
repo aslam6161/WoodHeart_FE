@@ -396,7 +396,13 @@ async function main() {
       // only exists inside a room, which is why it is the marker rather than a
       // category name that also appears on the product cards.
       check('the panel starts at the top level', html.includes('All products'));
-      check('and has not stepped into a room on its own', !html.includes('All Bedroom'));
+      // The back row is the marker for "inside a room": it is the one piece of
+      // the panel that only a drilled-in level renders, and unlike a category
+      // name it cannot also arrive on a product card. Matched as a class
+      // attribute, not a bare class name — the component's CSS is inlined into
+      // this very page, so `wh-cats__back` is present either way and a check
+      // for it would pass with the panel deleted.
+      check('and has not stepped into a room on its own', !html.includes('class="wh-cats__back"'));
     }
 
     console.log('--- a category URL opens the panel inside that room ---');
@@ -404,9 +410,9 @@ async function main() {
       const { status, html } = await get('/products?category=bedroom');
 
       check('it responds 200', status === 200, `got ${status}`);
-      check('the panel is inside the room, server side', html.includes('All Bedroom'));
-      check('its children are listed', html.includes('wh-cats__row'));
-      check('and a way back out is rendered', html.includes('wh-cats__back'));
+      check('the panel is inside the room, server side', html.includes('class="wh-cats__back"'));
+      check('the room names itself as the heading', html.includes('class="wh-cats__head'));
+      check('and its children are listed', html.includes('class="wh-cats__row"') && html.includes('Beds'));
     }
 
     console.log('--- product page head tags ---');

@@ -37,13 +37,11 @@ const SortOptions: ReadonlyArray<{ value: ProductSort; label: string }> = [
     <div class="container py-4">
       <div class="row g-4">
         <aside class="col-12 col-lg-3">
-          <h2 class="h6 text-uppercase text-muted">Categories</h2>
-
           @if (categories().length) {
             <app-category-filter [categories]="categories()" [selectedSlug]="categorySlug()" />
           }
 
-          <h2 class="h6 text-uppercase text-muted mt-4">Price</h2>
+          <h2 class="wh-filter__title">Price</h2>
 
           <div class="d-flex gap-2 align-items-center">
             <input
@@ -164,6 +162,17 @@ const SortOptions: ReadonlyArray<{ value: ProductSort; label: string }> = [
     </div>
   `,
   styles: `
+    /* Set to match the category panel's own heading, so the two halves of the
+       sidebar read as one column rather than two widgets. */
+    .wh-filter__title {
+      margin: 1.75rem 0 0.625rem;
+      color: var(--wh-ink, #5f5b57);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
     /* The previous results stay readable while the next page loads. Blanking
        the grid would make every filter click flash an empty catalogue. */
     .wh-loading {

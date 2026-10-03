@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CategoryTree } from '../../_models/catalog';
 
@@ -21,6 +21,11 @@ import { CategoryTree } from '../../_models/catalog';
  * back button is pressed — none of which a local "open" flag survives. Picking
  * a room both filters the listing and steps into it, which is the one click
  * the old list needed two of.
+ *
+ * <b>No counts.</b> A number beside every row turns a list of rooms into a
+ * table of figures, and the figure a customer wants is already on the listing
+ * beside the heading. What survives is the quieter half of it: a category with
+ * nothing in it is dimmed, so the eye skips it without having to read a zero.
  */
 @Component({
   selector: 'app-category-filter',
@@ -40,42 +45,42 @@ import { CategoryTree } from '../../_models/catalog';
           {{ parent()?.nameEn ?? 'All products' }}
         </a>
 
-        <!-- The room itself, and a way to buy from all of it. Without this row
-             there is no way to ask for "everything in the bedroom" once you
-             have stepped inside one. -->
+        <!-- The room's own name is the link to all of it. Spelling that out as
+             a separate "All Bedroom" row read like a form field; a heading you
+             can click reads like a heading. -->
         <a
-          class="wh-cats__current"
-          [class.wh-cats__row--on]="current.slug === selectedSlug()"
+          class="wh-cats__head"
+          [class.wh-cats__head--on]="current.slug === selectedSlug()"
           [routerLink]="['/products']"
           [queryParams]="{ category: current.slug, page: null }"
           queryParamsHandling="merge">
-          <span>All {{ current.nameEn }}</span>
-          <span class="wh-cats__count">{{ count(current) }}</span>
+          {{ current.nameEn }}
         </a>
       } @else {
         <a
-          class="wh-cats__row wh-cats__row--all"
-          [class.wh-cats__row--on]="!selectedSlug()"
+          class="wh-cats__head"
+          [class.wh-cats__head--on]="!selectedSlug()"
           [routerLink]="['/products']"
           [queryParams]="{ category: null, page: null }"
           queryParamsHandling="merge">
-          <span>All products</span>
-          <span class="wh-cats__count">{{ total() }}</span>
+          All products
         </a>
       }
 
-      <ul class="wh-cats__list">
-        @for (item of items(); track item.id) {
-          <li>
+      <ul class="wh-cats__list" [class.wh-cats__list--back]="goingBack()">
+        @for (item of items(); track item.id; let i = $index) {
+          <!-- Each row is a fresh element when the level changes, which is what
+               lets a CSS animation run again; the index staggers them so the
+               level arrives as a sweep rather than a jump. -->
+          <li class="wh-cats__item" [style.--i]="i">
             <a
               class="wh-cats__row"
               [class.wh-cats__row--on]="item.slug === selectedSlug()"
-              [class.wh-cats__row--empty]="count(item) === 0"
+              [class.wh-cats__row--empty]="!hasStock(item)"
               [routerLink]="['/products']"
               [queryParams]="{ category: item.slug, page: null }"
               queryParamsHandling="merge">
               <span>{{ item.nameEn }}</span>
-              <span class="wh-cats__count">{{ count(item) }}</span>
 
               @if (item.children.length) {
                 <svg class="wh-cats__chev wh-cats__chev--in" viewBox="0 0 16 16" aria-hidden="true">
@@ -89,33 +94,74 @@ import { CategoryTree } from '../../_models/catalog';
     </nav>
   `,
   styles: `
+    .wh-cats {
+      font-size: 0.9375rem;
+    }
+
     .wh-cats__list {
       list-style: none;
       margin: 0;
       padding: 0;
     }
 
-    .wh-cats__row,
-    .wh-cats__back,
-    .wh-cats__current {
+    .wh-cats__back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-bottom: 0.375rem;
+      color: var(--wh-quiet, #7a756f);
+      font-size: 0.8125rem;
+      text-decoration: none;
+      transition: color 0.18s ease;
+    }
+
+    .wh-cats__back:hover {
+      color: var(--wh-accent, #e99c2e);
+    }
+
+    /* The level's own name, set as a heading rather than another row, so the
+       eye can tell where it is before reading a word of the list. */
+    .wh-cats__head {
+      display: block;
+      padding-bottom: 0.625rem;
+      margin-bottom: 0.375rem;
+      border-bottom: 1px solid rgb(0 0 0 / 8%);
+      color: var(--wh-ink, #5f5b57);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: color 0.18s ease;
+    }
+
+    .wh-cats__head:hover,
+    .wh-cats__head--on {
+      color: var(--wh-accent, #e99c2e);
+    }
+
+    .wh-cats__row {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid rgb(0 0 0 / 6%);
+      padding: 0.4375rem 0;
       color: var(--wh-ink, #5f5b57);
+      line-height: 1.45;
       text-decoration: none;
+      transition:
+        color 0.18s ease,
+        transform 0.18s ease;
     }
 
-    .wh-cats__row > span:first-child,
-    .wh-cats__current > span:first-child {
+    .wh-cats__row > span {
       flex: 1 1 auto;
     }
 
-    .wh-cats__row:hover,
-    .wh-cats__back:hover,
-    .wh-cats__current:hover {
+    /* A couple of pixels, so a pointer gets something back from a row that
+       cannot light up a background without looking like a menu. */
+    .wh-cats__row:hover {
       color: var(--wh-accent, #e99c2e);
+      transform: translateX(3px);
     }
 
     .wh-cats__row--on {
@@ -127,30 +173,60 @@ import { CategoryTree } from '../../_models/catalog';
        does not compete with the ones that have something on them. */
     .wh-cats__row--empty {
       color: var(--wh-quiet, #7a756f);
-    }
-
-    .wh-cats__back {
-      color: var(--wh-quiet, #7a756f);
-      font-size: 0.875rem;
-    }
-
-    .wh-cats__current {
-      font-weight: 500;
-    }
-
-    .wh-cats__count {
-      color: var(--wh-quiet, #7a756f);
-      font-size: 0.8125rem;
+      opacity: 0.75;
     }
 
     .wh-cats__chev {
-      width: 0.875rem;
-      height: 0.875rem;
+      width: 0.75rem;
+      height: 0.75rem;
       flex: 0 0 auto;
     }
 
     .wh-cats__chev--in {
       color: var(--wh-quiet, #7a756f);
+      transition: transform 0.18s ease;
+    }
+
+    .wh-cats__row:hover .wh-cats__chev--in {
+      transform: translateX(2px);
+    }
+
+    /* Going deeper, the level arrives from the right; coming back out, from
+       the left — so the movement says which way you went. */
+    @keyframes wh-cats-in {
+      from {
+        opacity: 0;
+        transform: translateX(0.75rem);
+      }
+    }
+
+    @keyframes wh-cats-out {
+      from {
+        opacity: 0;
+        transform: translateX(-0.75rem);
+      }
+    }
+
+    .wh-cats__item {
+      animation: wh-cats-in 0.26s ease both;
+      animation-delay: calc(var(--i, 0) * 28ms);
+    }
+
+    .wh-cats__list--back .wh-cats__item {
+      animation-name: wh-cats-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wh-cats__item {
+        animation: none;
+      }
+
+      .wh-cats__row,
+      .wh-cats__row:hover,
+      .wh-cats__chev--in {
+        transition: none;
+        transform: none;
+      }
     }
   `
 })
@@ -158,7 +234,7 @@ export class CategoryFilter {
   readonly categories = input.required<CategoryTree[]>();
   readonly selectedSlug = input<string | null>(null);
 
-  /** Root to selected, which is the only state this panel has. */
+  /** Root to selected, which is the only navigation state this panel has. */
   private readonly path = computed(() => pathTo(this.categories(), this.selectedSlug()));
 
   /**
@@ -187,12 +263,29 @@ export class CategoryFilter {
 
   protected readonly items = computed(() => this.focus()?.children ?? this.categories());
 
-  protected readonly total = computed(() =>
-    this.categories().reduce((sum, category) => sum + rollup(category), 0)
-  );
+  /**
+   * Which way the last move went, for the animation and nothing else.
+   *
+   * Direction is the one thing the URL cannot say — `?category=beds` is the
+   * same address whether it was reached by stepping in or backing out — so it
+   * is remembered here, where being wrong costs an animation playing the wrong
+   * way and no more than that.
+   */
+  protected readonly goingBack = signal(false);
+  private lastDepth = -1;
 
-  protected count(category: CategoryTree): number {
-    return rollup(category);
+  constructor() {
+    effect(() => {
+      const depth = this.focus()?.depth ?? -1;
+
+      this.goingBack.set(depth < this.lastDepth);
+      this.lastDepth = depth;
+    });
+  }
+
+  /** Whether anything below this category is actually for sale. */
+  protected hasStock(category: CategoryTree): boolean {
+    return rollup(category) > 0;
   }
 }
 
@@ -200,9 +293,9 @@ export class CategoryFilter {
  * A category's own products plus everything below it.
  *
  * The API counts what is filed directly against a category, and products are
- * filed against leaves, so every room's own count is zero. The listing already
- * searches a category <i>and its descendants</i>, so this is the number that
- * matches what the click actually returns — which the raw count did not.
+ * filed against leaves, so every room's own count is zero — which would dim
+ * every room on the top level. No number is printed any more, but it still
+ * decides what looks empty, so it still has to be right.
  */
 function rollup(category: CategoryTree): number {
   return category.children.reduce((sum, child) => sum + rollup(child), category.productCount);
