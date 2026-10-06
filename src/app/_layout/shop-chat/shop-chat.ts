@@ -105,9 +105,18 @@ const HistoryTurns = 6;
                 }
               </div>
 
-              <form class="wh-chat__ask" (submit)="send($event)">
+              <!-- Deliberately not a <form>. A form's default action is to
+                   navigate, and a chat window that navigates throws the whole
+                   conversation away — so there is no submission here for a
+                   browser to perform, by accident or otherwise. Enter and the
+                   button both go through send(). -->
+              <div class="wh-chat__ask">
                 <label class="visually-hidden" for="wh-chat-input">Your question</label>
 
+                <!-- Left enabled while the reply is on its way. Disabling a
+                     focused field takes the cursor out of it, and the next
+                     question then gets typed into a page that is not
+                     listening. send() is what refuses a second question. -->
                 <input
                   #input
                   id="wh-chat-input"
@@ -115,11 +124,16 @@ const HistoryTurns = 6;
                   type="text"
                   maxlength="600"
                   autocomplete="off"
-                  [disabled]="thinking()"
-                  placeholder="Delivery, payment, what we make…" />
+                  enterkeyhint="send"
+                  placeholder="Delivery, payment, what we make…"
+                  (keydown.enter)="send($event)" />
 
-                <button class="btn btn-dark" type="submit" [disabled]="thinking()">Send</button>
-              </form>
+                <button
+                  class="btn btn-dark"
+                  type="button"
+                  [disabled]="thinking()"
+                  (click)="send($event)">Send</button>
+              </div>
             </section>
           }
 
@@ -323,6 +337,8 @@ export class ShopChat implements OnInit {
         next: response => {
           this.thinking.set(false);
 
+          this.refocus();
+
           if (!response.isSuccess || !response.data) {
             // The API's own sentence. "Busy, try again in a moment" and
             // "switched off" are different, and both are better than a shrug.
@@ -344,6 +360,7 @@ export class ShopChat implements OnInit {
         },
         error: () => {
           this.thinking.set(false);
+          this.refocus();
           this.say('Sorry — I could not answer just now. Please try again.');
         }
       });
@@ -446,6 +463,17 @@ export class ShopChat implements OnInit {
     return this.messages()
       .slice(-HistoryTurns)
       .map(message => ({ fromCustomer: message.fromCustomer, text: message.text }));
+  }
+
+  /**
+   * Puts the cursor back in the box.
+   *
+   * A conversation is a run of questions, and clicking Send moves focus to the
+   * button. Without this, the follow-up somebody types straight afterwards goes
+   * nowhere at all — no error, no message, just lost.
+   */
+  private refocus(): void {
+    queueMicrotask(() => this.input()?.nativeElement.focus());
   }
 
   private scroll(): void {

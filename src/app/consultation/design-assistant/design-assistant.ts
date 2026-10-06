@@ -49,7 +49,10 @@ import { ProductCard } from '../../catalog/product-card/product-card';
           suggest pieces from the workshop. Bangla or English.
         </p>
 
-        <form class="wh-ask__form" (submit)="ask($event)">
+        <!-- Not a <form>, for the same reason as the chat window: its default
+             action is to navigate, and nothing here wants that. ask() is the
+             only way in. -->
+        <div class="wh-ask__form">
           <label class="visually-hidden" for="design-question">Describe your room</label>
 
           <textarea
@@ -62,10 +65,14 @@ import { ProductCard } from '../../catalog/product-card/product-card';
             [disabled]="thinking()"
             placeholder="A 10 by 12 bedroom for two, budget around 80,000…"></textarea>
 
-          <button class="btn btn-dark mt-2" type="submit" [disabled]="thinking()">
+          <button
+            class="btn btn-dark mt-2"
+            type="button"
+            [disabled]="thinking()"
+            (click)="ask($event)">
             {{ thinking() ? 'Thinking…' : 'Ask the designer' }}
           </button>
-        </form>
+        </div>
 
         <!-- Announced, because the answer arrives below a control the customer
              has just used and a screen reader would otherwise say nothing for
