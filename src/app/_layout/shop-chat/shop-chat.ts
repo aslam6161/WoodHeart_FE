@@ -100,8 +100,17 @@ const HistoryTurns = 6;
                   }
                 }
 
+                <!-- Where the answer is about to be, which is where every
+                     chat window puts it. Announced as text for a screen
+                     reader, drawn as dots for everyone else. -->
                 @if (thinking()) {
-                  <p class="wh-chat__thinking">Typing…</p>
+                  <div class="wh-chat__msg wh-chat__typing">
+                    <span class="visually-hidden">Typing…</span>
+
+                    <span class="wh-chat__dots" aria-hidden="true">
+                      <span></span><span></span><span></span>
+                    </span>
+                  </div>
                 }
               </div>
 
@@ -241,10 +250,56 @@ const HistoryTurns = 6;
       margin-bottom: 0.875rem;
     }
 
-    .wh-chat__thinking {
-      color: var(--wh-quiet, #7a756f);
-      font-size: 0.875rem;
-      margin: 0;
+    /* Shrink-wrapped rather than the bubble's usual 90%, so three dots read as
+       a pause in the conversation and not as an empty message. */
+    .wh-chat__typing {
+      display: inline-flex;
+      align-items: center;
+      width: auto;
+      padding: 0.625rem 0.75rem;
+    }
+
+    .wh-chat__dots {
+      display: inline-flex;
+      gap: 0.25rem;
+    }
+
+    .wh-chat__dots span {
+      width: 0.375rem;
+      height: 0.375rem;
+      border-radius: 50%;
+      background: var(--wh-quiet, #7a756f);
+      animation: wh-chat-blink 1.4s ease-in-out infinite both;
+    }
+
+    .wh-chat__dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .wh-chat__dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes wh-chat-blink {
+      0%,
+      80%,
+      100% {
+        opacity: 0.3;
+        transform: translateY(0);
+      }
+
+      40% {
+        opacity: 1;
+        transform: translateY(-0.125rem);
+      }
+    }
+
+    /* The bubble is the message; the movement is decoration. */
+    @media (prefers-reduced-motion: reduce) {
+      .wh-chat__dots span {
+        animation: none;
+        opacity: 0.6;
+      }
     }
 
     .wh-chat__ask {

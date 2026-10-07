@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { GeneralResponseOf } from '../_models/generalResponse';
 import { ShopChatReply, ShopChatTurn } from '../_models/assistant';
-import { handledInline, silentFailure } from '../_interceptors/http-context';
+import { handledInline, quiet, silentFailure } from '../_interceptors/http-context';
 
 /**
  * The chat window's half of the conversation.
@@ -30,7 +30,9 @@ export class AssistantService {
    */
   offered(): Observable<boolean> {
     return this.http
-      .get<GeneralResponseOf<boolean>>(`${this.baseUrl}/offered`, { context: silentFailure() })
+      .get<GeneralResponseOf<boolean>>(`${this.baseUrl}/offered`, {
+        context: quiet(silentFailure())
+      })
       .pipe(
         map(response => response.data ?? false),
         catchError(() => of(false))
@@ -49,7 +51,7 @@ export class AssistantService {
       .post<GeneralResponseOf<ShopChatReply>>(
         `${this.baseUrl}/chat`,
         { message, history },
-        { context: handledInline() }
+        { context: quiet(handledInline()) }
       )
       .pipe(catchError(envelopeFromError));
   }

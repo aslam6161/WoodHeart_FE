@@ -50,3 +50,21 @@ export function silentFailure(): HttpContext {
 export function handledInline(): HttpContext {
   return new HttpContext().set(SILENT_FAILURE, true).set(HANDLES_NOT_FOUND, true);
 }
+
+/**
+ * Marks a request that must not raise the full-page spinner.
+ *
+ * The overlay is right for something the customer is waiting on with nothing
+ * else to look at — placing an order, saving a form. It is wrong for anything
+ * that has its own place to show progress: a chat window has a bubble where the
+ * answer is about to appear, and dimming the whole shop while it fills makes a
+ * conversation feel like a page load.
+ *
+ * Composes with the others, so a call can be both quiet and handled inline:
+ * `quiet(handledInline())`.
+ */
+export const QUIET = new HttpContextToken<boolean>(() => false);
+
+export function quiet(context: HttpContext = new HttpContext()): HttpContext {
+  return context.set(QUIET, true);
+}

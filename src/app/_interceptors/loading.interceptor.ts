@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { finalize } from 'rxjs';
 import { BusyService } from '../_services/busy.service';
+import { QUIET } from './http-context';
 
 /** Requests that must not raise the global spinner. */
 const SILENT_ENDPOINTS = [
@@ -21,8 +22,13 @@ const SILENT_ENDPOINTS = [
 export const loadingInterceptor: HttpInterceptorFn = (request, next) => {
   const busy = inject(BusyService);
 
+  // The context token first: a caller that shows its own progress says so at
+  // the call site, which survives a route being renamed in a way this list of
+  // URL fragments does not.
   const isSilent =
-    request.headers.has('X-Silent') || SILENT_ENDPOINTS.some(path => request.url.includes(path));
+    request.context.get(QUIET) ||
+    request.headers.has('X-Silent') ||
+    SILENT_ENDPOINTS.some(path => request.url.includes(path));
 
   if (isSilent) {
     return next(request);

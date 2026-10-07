@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { environment } from '../../environments/environment';
-import { SILENT_FAILURE } from '../_interceptors/http-context';
+import { QUIET, SILENT_FAILURE } from '../_interceptors/http-context';
 import { AssistantService } from './assistant.service';
 
 describe('AssistantService', () => {
@@ -56,6 +56,16 @@ describe('AssistantService', () => {
 
       request.flush({ isSuccess: true, data: true });
     });
+
+    it('does not raise the full-page spinner', () => {
+      service.offered().subscribe();
+
+      const request = http.expectOne(`${base}/offered`);
+
+      expect(request.request.context.get(QUIET)).toBe(true);
+
+      request.flush({ isSuccess: true, data: true });
+    });
   });
 
   describe('chat', () => {
@@ -67,6 +77,20 @@ describe('AssistantService', () => {
       expect(request.request.method).toBe('POST');
       expect(request.request.body.message).toBe('How much is delivery?');
       expect(request.request.body.history).toHaveLength(1);
+
+      request.flush({ isSuccess: true, data: { reply: 'At checkout.', products: [], actions: [] } });
+    });
+
+    it('does not raise the full-page spinner, because the window shows its own', () => {
+      service.chat('How much is delivery?', []).subscribe();
+
+      // The overlay is for something the customer is waiting on with nothing
+      // else to look at. A chat window has a bubble filling in with three dots;
+      // dimming the whole shop on top of that makes a conversation feel like a
+      // page load.
+      const request = http.expectOne(`${base}/chat`);
+
+      expect(request.request.context.get(QUIET)).toBe(true);
 
       request.flush({ isSuccess: true, data: { reply: 'At checkout.', products: [], actions: [] } });
     });

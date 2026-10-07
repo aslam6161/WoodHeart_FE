@@ -14,7 +14,12 @@ import {
   DesignAdvice
 } from '../_models/consultations';
 import { PagedResult } from '../_models/pagination';
-import { handledInline, handlesNotFound, silentFailure } from '../_interceptors/http-context';
+import {
+  handledInline,
+  handlesNotFound,
+  quiet,
+  silentFailure
+} from '../_interceptors/http-context';
 
 /**
  * Consultations: what is offered, when it can happen, and booking one.
@@ -160,7 +165,7 @@ export class ConsultationApiService {
   adviceOffered(): Observable<boolean> {
     return this.http
       .get<GeneralResponseOf<boolean>>(`${this.baseUrl}/advice/offered`, {
-        context: silentFailure()
+        context: quiet(silentFailure())
       })
       .pipe(
         map(response => response.data ?? false),
@@ -181,7 +186,7 @@ export class ConsultationApiService {
       .post<GeneralResponseOf<DesignAdvice>>(
         `${this.baseUrl}/advice`,
         { question },
-        { context: handledInline() }
+        { context: quiet(handledInline()) }
       )
       .pipe(catchError(adviceEnvelopeFromError));
   }
