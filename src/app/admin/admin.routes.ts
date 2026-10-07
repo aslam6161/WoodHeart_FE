@@ -86,6 +86,18 @@ export const adminRoutes: Routes = [
   // both declared before ':quotationNumber' for the usual reason — otherwise
   // the detail page tries to load a quotation called "new".
   {
+    path: 'contact-messages',
+    loadComponent: () =>
+      import('./contact/admin-contact-list').then(m => m.AdminContactList),
+    title: 'Messages — WoodHeart Admin'
+  },
+  {
+    path: 'contact-messages/:id',
+    loadComponent: () =>
+      import('./contact/admin-contact-detail').then(m => m.AdminContactDetail),
+    title: 'Message — WoodHeart Admin'
+  },
+  {
     path: 'quotations',
     loadComponent: () =>
       import('./quotations/admin-quotation-list').then(m => m.AdminQuotationList),
