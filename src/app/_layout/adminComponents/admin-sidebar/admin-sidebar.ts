@@ -1,6 +1,7 @@
-﻿import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
+﻿import { Component, ChangeDetectionStrategy, OnInit, input, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountService } from '../../../_services/account.service';
+import { AdminContactService } from '../../../_services/admin/admin-contact.service';
 
 interface NavItem {
   label: string;
@@ -38,6 +39,13 @@ interface NavItem {
 
             @if (!collapsed()) {
               <span class="wh-sidebar__label">{{ item.label }}</span>
+            }
+
+            <!-- Only the inbox carries one. A message nobody has opened is the
+                 only thing in this panel that goes stale by being ignored:
+                 everything else is work somebody came here to do. -->
+            @if (item.path === inboxPath && contact.newCount() > 0) {
+              <span class="wh-sidebar__badge">{{ contact.newCount() }}</span>
             }
           </a>
         }
@@ -135,6 +143,33 @@ interface NavItem {
       white-space: nowrap;
     }
 
+    /* Pushed to the end of the row when there are labels, and sitting on the
+       icon when the rail is collapsed — so the count survives collapsing,
+       which is when it is most needed. */
+    .wh-sidebar__badge {
+      margin-left: auto;
+      min-width: 1.25rem;
+      padding: 0 0.3rem;
+      border-radius: 999px;
+      background: var(--wh-accent, #e99c2e);
+      color: #fff;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      line-height: 1.25rem;
+      text-align: center;
+    }
+
+    .wh-sidebar--collapsed .wh-sidebar__badge {
+      position: absolute;
+      top: 0.25rem;
+      right: 0.25rem;
+      margin-left: 0;
+    }
+
+    .wh-sidebar--collapsed .wh-sidebar__link {
+      position: relative;
+    }
+
     /* Centred icons once the labels are gone, so a collapsed rail does not
        read as a list with its text cut off. */
     .wh-sidebar--collapsed .wh-sidebar__link,
@@ -153,10 +188,22 @@ interface NavItem {
     }
   `
 })
-export class AdminSidebar {
+export class AdminSidebar implements OnInit {
   private readonly account = inject(AccountService);
 
+  protected readonly contact = inject(AdminContactService);
+
+  /** The one entry that carries a count. Matched by path, not by label. */
+  protected readonly inboxPath = '/admin/contact-messages';
+
   readonly collapsed = input(false);
+
+  ngOnInit(): void {
+    // Asked once per admin session rather than polled. The count is corrected
+    // whenever a message is opened or saved, which is the only way it moves
+    // while somebody is sitting here.
+    this.contact.refreshCount();
+  }
 
   /**
    * The menu.
@@ -207,6 +254,11 @@ export class AdminSidebar {
       label: 'Consultations',
       path: '/admin/consultations',
       icon: 'M7 2v2h10V2h2v2h3v18H2V4h3V2h2zm13 8H4v10h16V10z'
+    },
+    {
+      label: 'Messages',
+      path: '/admin/contact-messages',
+      icon: 'M2 5h20v14H2V5zm2.4 2L12 12.2 19.6 7H4.4z'
     },
     {
       label: 'Quotations',

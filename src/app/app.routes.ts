@@ -136,6 +136,16 @@ export const routes: Routes = [
         title: 'Create an account'
       },
 
+      // The footer has linked here since it was written. Until this route
+      // existed, following that link landed on a 404 with the shop's own name
+      // at the top of it.
+      {
+        path: 'contact',
+        loadComponent: () =>
+          import('./contact/contact-page/contact-page').then(m => m.ContactPage),
+        title: 'Contact us — WoodHeart'
+      },
+
       { path: 'not-found', component: NotFound, title: 'Page not found' },
       { path: 'server-error', component: ServerError, title: 'Something went wrong' },
 
